@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, Check } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import bgImage from '../assets/bg.png';
@@ -7,7 +7,6 @@ import { ToastContainer, toast } from 'react-toastify';
 
 
 export default function Register() {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,20 +27,10 @@ export default function Register() {
   const handleRegister = (e) => {
     e.preventDefault();
     if (!agreeToTerms) {
-      toast.error('Please agree to the Terms and Policies');
+      alert('Please agree to the Terms and Policies');
       return;
     }
-    
-    // Simulate registration process
     console.log('Registration attempt:', { fullName, email, password });
-    
-    // Show success notification
-    toast.success('Account created successfully! Welcome to CarSewa!');
-    
-    // Navigate to login page after a short delay
-    setTimeout(() => {
-      navigate('/login');
-    }, 2000); // 2 second delay to show the toast
   };
 
   const handleGoogleSignup = () => {
@@ -219,9 +208,6 @@ export default function Register() {
 
       {/* Decorative gradient overlay */}
       <div className="hidden lg:block absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-transparent via-transparent to-black/20 pointer-events-none"></div>
-      
-      {/* Toast Container */}
-      <ToastContainer />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { Trash2, ShoppingCart } from 'lucide-react';
 import { VscArrowRight } from "react-icons/vsc";
 
@@ -131,6 +132,7 @@ export default function Wishlist() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

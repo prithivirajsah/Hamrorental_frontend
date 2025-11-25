@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { User, Heart, LogOut } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
-import Toggle from './Toggle';
-
 
 export default function Header() {
   // State to track if user is logged in (you can connect this to your auth system)
@@ -84,7 +82,7 @@ export default function Header() {
 
           {/* Right: Dark Mode Toggle, Add Post and Profile (when logged in) or Login */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Toggle />
+          
 
             {isLoggedIn ? (
               <>
@@ -120,9 +118,9 @@ export default function Header() {
 
                   {/* Profile Popup */}
                   {showProfilePopup && (
-                    <div className="absolute right-0 top-12 w-80 bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 z-50 overflow-hidden">
+                    <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
                       {/* Profile Header */}
-                      <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-6 py-6 text-center">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-6 text-center">
                         <div className="relative inline-block mb-4">
                           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center border-4 border-purple-400">
                             <img 
@@ -136,17 +134,17 @@ export default function Header() {
                             />
                             <User className="w-10 h-10 text-white hidden" />
                           </div>
-                          <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
+                          <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                         </div>
-                        <h3 className="text-white font-semibold text-lg mb-1">Prithivi Raj Sah</h3>
-                        <p className="text-gray-300 text-sm">prithivirajsah584@gmail.com</p>
+                        <h3 className="text-gray-900 font-semibold text-lg mb-1">Prithivi Raj Sah</h3>
+                        <p className="text-gray-600 text-sm">prithivirajsah584@gmail.com</p>
                       </div>
 
                       {/* Menu Items */}
                       <div className="py-2">
                         <Link 
                           to="/profile" 
-                          className="flex items-center gap-3 px-6 py-3 text-gray-300 hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setShowProfilePopup(false)}
                         >
                           <User className="w-5 h-5" />
@@ -155,7 +153,7 @@ export default function Header() {
                         
                         <Link 
                           to="/wishlist" 
-                          className="flex items-center gap-3 px-6 py-3 text-gray-300 hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setShowProfilePopup(false)}
                         >
                           <Heart className="w-5 h-5" />
@@ -164,7 +162,7 @@ export default function Header() {
                         
                         <button 
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-6 py-3 text-red-400 hover:bg-gray-800 transition-colors"
+                          className="w-full flex items-center gap-3 px-6 py-3 text-red-600 hover:bg-gray-100 transition-colors"
                         >
                           <LogOut className="w-5 h-5" />
                           <span>Logout</span>
