@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { keepTheme } from './utils/themes';
 import Login from './pages/Login';
-import Register from './pages/Register'
-import Home from './pages/Home'
+import Register from './pages/Register';
+import Home from './pages/Home';
 import Vehicles from './pages/Vehicles';
 import HireaDriver from './pages/HireaDriver';
 import FAQs from './pages/FAQs';

@@ -6,7 +6,7 @@ import HeaderIcon from '../assets/Headericon.png';
 
 export default function Footer() {
   return (
-    <footer className="bg-white text-black mt-4 ">
+    <footer className="bg-white text-black mt-3 ">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
           {/* Company Info */}
@@ -127,15 +127,14 @@ export default function Footer() {
                   Haddigaun Naxal
                 </span>
               </li>
-
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-300 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in animation-delay-500">
-          <p className="text-black text-center md:text-left hover:text-gray-600 transition-colors duration-300">
-            © 2025 HamroCar Rental. All rights reserved.
+        <div className="border-t border-gray-300 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-black text-center md:text-left">
+            © 2025 HamroCar Rental. 
           </p>
           <div className="flex flex-wrap gap-6 text-black">
             <a href="#" className="text-black hover-custom-purple font-medium transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">

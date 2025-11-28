@@ -85,7 +85,7 @@ export default function Profile() {
       case 'details':
         return (
           <div className="animate-fadeIn "> 
-            <div className="bg-white rounded-xl shadow-xl p-6 mb-6 border border-gray-200 dark:border-gray-600 rounded-xl p-4 hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-xl shadow-xl p-6 mb-0.5 border border-gray-200 dark:border-gray-600 rounded-xl p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-6 mb-6">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center overflow-hidden">
@@ -352,14 +352,14 @@ export default function Profile() {
         
         {/* Navigation Tabs */}
         <div className="mb-8">
-          <nav className="flex space-x-8 border-b border-gray-200">
+          <nav className="flex space-x-4 border-b border-gray-200">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-300 border-b-2 ${
+                  className={`flex items-center gap-1.5 px-4 py-3 font-medium transition-all duration-300 border-b-2 ${
                     activeTab === tab.id
                       ? 'text-[#695ED9] border-[#695ED9]'
                       : 'text-gray-500 border-transparent hover:text-[#695ED9] hover:border-[#695ED9]'
@@ -374,7 +374,7 @@ export default function Profile() {
         </div>
 
         {/* Tab Content */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-8xl">
           {renderTabContent()}
         </div>
       </main>

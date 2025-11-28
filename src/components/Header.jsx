@@ -76,14 +76,12 @@ export default function Header() {
             <img 
               src={HeaderIcon} 
               alt="Hamro Rental Logo" 
-              className="h-8 sm:h-10 w-auto"
+              className="h-8 sm:h-10 w-auto transform hover:scale-105 transition-transform duration-300"
             />
           </div>
 
-          {/* Right: Dark Mode Toggle, Add Post and Profile (when logged in) or Login */}
+          {/* Add Post and Profile (when logged in) or Login */}
           <div className="flex items-center gap-2 sm:gap-3">
-          
-
             {isLoggedIn ? (
               <>
                 {/* Add Post Button */}
