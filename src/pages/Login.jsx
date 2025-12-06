@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import bgImage from '../assets/bg.png';
 import { ToastContainer, toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,11 +13,44 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt:', { email, password });
+    
+    if (!email.trim()) {
+      toast.error('Please enter your email');
+      return;
+    }
+    
+    if (!password) {
+      toast.error('Please enter your password');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const result = await login(email.trim().toLowerCase(), password);
+
+      if (result.success) {
+        toast.success('Login successful!');
+        // Redirect to home page or dashboard
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
+      } else {
+        toast.error(result.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -108,9 +143,14 @@ export default function Login() {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+              disabled={isLoading}
+              className={`w-full h-12 font-semibold rounded-xl shadow-lg transition-all duration-300 ${
+                isLoading
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 hover:shadow-xl transform hover:scale-[1.02]'
+              } text-white`}
             >
-              Log In
+              {isLoading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 
@@ -125,10 +165,11 @@ export default function Login() {
           <button
             onClick={handleGoogleLogin}
             className="w-full h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 group"
-          >
+          password>
             <FcGoogle className="w-6 h-6" />
             <span className="text-white font-medium">Continue with Google</span>
           </button>
+          
 
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
@@ -197,6 +238,20 @@ export default function Login() {
           </div>
         </div>
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 }

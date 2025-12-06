@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { User, Heart, LogOut } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Header() {
-  // State to track if user is logged in (you can connect this to your auth system)
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Set to true to show logged-in state
+  const { user, isAuthenticated, logout } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const profileRef = useRef(null);
 
@@ -29,9 +29,8 @@ export default function Header() {
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
     setShowProfilePopup(false);
-    // Add your logout logic here
   };
 
   return (
@@ -82,7 +81,7 @@ export default function Header() {
 
           {/* Add Post and Profile (when logged in) or Login */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {isLoggedIn ? (
+            {isAuthenticated() ? (
               <>
                 {/* Add Post Button */}
                 <button 
@@ -121,21 +120,16 @@ export default function Header() {
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-6 text-center">
                         <div className="relative inline-block mb-4">
                           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center border-4 border-purple-400">
-                            <img 
-                              src="/api/placeholder/80/80" 
-                              alt="Profile" 
-                              className="w-16 h-16 rounded-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                            <User className="w-10 h-10 text-white hidden" />
+                            <User className="w-10 h-10 text-white" />
                           </div>
                           <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                         </div>
-                        <h3 className="text-gray-900 font-semibold text-lg mb-1">Prithivi Raj Sah</h3>
-                        <p className="text-gray-600 text-sm">prithivirajsah584@gmail.com</p>
+                        <h3 className="text-gray-900 font-semibold text-lg mb-1">
+                          {user?.full_name || user?.username || 'User'}
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          {user?.email || 'user@example.com'}
+                        </p>
                       </div>
 
                       {/* Menu Items */}

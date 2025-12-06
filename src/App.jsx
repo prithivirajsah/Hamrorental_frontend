@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { keepTheme } from './utils/themes';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -12,24 +12,33 @@ import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 
 function App() {
-  useEffect(() => {
-    keepTheme();
-  }, []);
-
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path='/' element= {<Home/>} />
-        <Route path='/vehicles' element= {<Vehicles/>} />
-        <Route path='/hire-a-driver' element= {<HireaDriver/>} />
-        <Route path='/faqs' element= {<FAQs/>} />
-        <Route path='/contact' element= {<Contact/>} />
-        <Route path='/profile' element= {<Profile/>} />
-        <Route path='/wishlist' element= {<Wishlist/>} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path='/' element={<Home />} />
+          <Route path='/vehicles' element={<Vehicles />} />
+          <Route path='/hire-a-driver' element={<HireaDriver />} />
+          <Route path='/faqs' element={<FAQs />} />
+          <Route path='/contact' element={<Contact />} />
+          
+          {/* Protected Routes - require authentication */}
+          <Route path='/x' element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          
+          <Route path='/wishlist' element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

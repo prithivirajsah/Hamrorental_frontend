@@ -59,18 +59,18 @@ export default function FAQs() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-6 text-center">Frequently Asked Questions</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 text-center">
+          <p className="text-lg text-gray-600 mb-8 text-center">
             Find answers to common questions about our car rental and driver services.
           </p>
           
           <div className="space-y-4">
             {faqs.map((faq) => (
-              <div key={faq.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div key={faq.id} className="bg-white border border-gray-200 rounded-lg">
                 <button
                   onClick={() => toggleFAQ(faq.id)}
-                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
                 >
-                  <span className="font-semibold text-gray-900 dark:text-white">{faq.question}</span>
+                  <span className="font-semibold text-gray-900">{faq.question}</span>
                   {openFAQ === faq.id ? (
                     <ChevronUp className="w-5 h-5 text-gray-500" />
                   ) : (
@@ -80,16 +80,16 @@ export default function FAQs() {
                 
                 {openFAQ === faq.id && (
                   <div className="px-6 pb-4">
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{faq.answer}</p>
+                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                   </div>
                 )}
               </div>
             ))}
           </div>
           
-          <div className="mt-12 bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-lg text-center">
+          <div className="mt-12 bg-indigo-50 p-6 rounded-lg text-center">
             <h3 className="text-xl font-semibold mb-2">Still have questions?</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <p className="text-gray-600 mb-4">
               Can't find the answer you're looking for? Our customer support team is here to help.
             </p>
             <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
