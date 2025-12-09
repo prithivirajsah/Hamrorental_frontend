@@ -41,22 +41,6 @@ export default function Profile() {
       ip: '103.10.28.xxx',
       status: 'success'
     },
-    {
-      id: 2,
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      device: 'Safari on iPhone',
-      location: 'Kathmandu, Nepal',
-      ip: '103.10.28.xxx',
-      status: 'success'
-    },
-    {
-      id: 3,
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      device: 'Chrome on Windows',
-      location: 'Pokhara, Nepal',
-      ip: '202.79.34.xxx',
-      status: 'success'
-    }
   ]);
 
   // Initialize form data with user information
@@ -362,48 +346,6 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-
-              {/* KYC Section */}
-              {kycStatus !== 'verified' && (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-yellow-500 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-yellow-800 mb-1">Complete Your KYC Verification</h4>
-                      <p className="text-sm text-yellow-700 mb-3">
-                        To access all features and increase your trust score, please complete your KYC verification.
-                      </p>
-                      <div className="flex gap-2 flex-wrap">
-                        <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                          Upload Documents
-                        </button>
-                        
-                        {/* Demo buttons */}
-                        <div className="flex gap-1">
-                          <button 
-                            onClick={() => setKycStatus('pending')}
-                            className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-2 py-1 rounded text-xs"
-                          >
-                            Pending
-                          </button>
-                          <button 
-                            onClick={() => setKycStatus('verified')}
-                            className="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded text-xs"
-                          >
-                            Verified
-                          </button>
-                          <button 
-                            onClick={() => setKycStatus('rejected')}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded text-xs"
-                          >
-                            Rejected
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
               {/* Action Buttons */}
               <div className="mt-6 flex gap-3">
@@ -603,6 +545,7 @@ export default function Profile() {
                       <h4 className="font-semibold">Toyota Camry 2023 - Available for Rent</h4>
                       <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">Active</span>
                     </div>
+                    
                     <p className="text-gray-600 text-sm mb-3">
                       Well-maintained sedan perfect for city drives and long trips. Available for daily, weekly, and monthly rentals.
                     </p>

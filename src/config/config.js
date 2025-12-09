@@ -3,7 +3,8 @@ export const config = {
   // Backend API URLs
   API_BASE_URL: process.env.NODE_ENV === "production"
     ? "https://hamrorental-backend.onrender.com"
-    : "http://127.0.0.1:8000", // Use local mock server for development
+    : "http://127.0.0.1:8000", 
+    // Use local mock server for development
   
   // Frontend URLs
   FRONTEND_URL: process.env.NODE_ENV === "production"
@@ -36,7 +37,7 @@ export const config = {
     
     // Drivers
     DRIVERS: "/drivers",
-    
+
     // Contact
     CONTACT: "/contact",
     

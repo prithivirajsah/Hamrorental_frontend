@@ -40,7 +40,14 @@ export default function Login() {
         toast.success('Login successful!');
         // Redirect to home page or dashboard
         setTimeout(() => {
-          navigate('/');
+          const role = response.data?.user?.role;
+          if (role === "admin") {
+            navigate('/admin')
+          } else if (role === "driver") {
+            navigate('/driver')
+          } else {
+            navigate('/')
+          }
         }, 1000);
       } else {
         toast.error(result.error || 'Login failed. Please check your credentials.');

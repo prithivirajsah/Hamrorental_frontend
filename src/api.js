@@ -22,22 +22,46 @@ const api = {
   async login(email, password) {
     // Backend expects form-encoded data for OAuth2 login
     const formData = new URLSearchParams();
-    formData.append('username', email);
-    formData.append('password', password);
-    
+    formData.append("username", email);
+    formData.append("password", password);
+
     const response = await axiosInstance.post("/auth/login", formData, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
       },
     });
-    
-    // Store token after successful login
+
+    console.log('res', response.data)
+    // Save token
     if (response.data.access_token) {
       localStorage.setItem("token", response.data.access_token);
     }
-    
+    console.log(response.data.user)
+
+    // Extract role safely from backend response
+    const role =
+      response.data?.user?.role ||
+      response.data?.role ||               // backup
+      response.data?.user_role ||          // backup
+      null;
+
+    console.log("Logged-in role:", role);
+
+    // Redirect based on role
+    if (role === "admin") {
+      window.location.href = "/admin";
+    } else if (role === "driver") {
+      window.location.href = "/driver";
+    } else if (role === "user") {
+      window.location.href = "/";
+    } else {
+      // Fallback (if backend returned no role)
+      window.location.href = "/";
+    }
+
     return response.data;
   },
+
 
   async getProfile() {
     const response = await axiosInstance.get("/users/me");
