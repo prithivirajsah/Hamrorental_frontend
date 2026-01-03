@@ -50,6 +50,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+  
+  // Login Activity
   const login = async (email, password) => {
     try {
       console.log('Attempting to login user:', email);

@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Password strength calculation function
 const calculatePasswordStrength = (password) => {
   let strength = 0;
   if (password.length >= 8) strength++;
@@ -18,7 +17,6 @@ const calculatePasswordStrength = (password) => {
   return strength;
 };
 
-// Debounce hook for API calls
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 

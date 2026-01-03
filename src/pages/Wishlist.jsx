@@ -15,7 +15,7 @@ export default function Wishlist() {
       id: 1, 
       name: '2023 Changan SL S7 EV', 
       price: 0.00, 
-      image: 'https://images.unsplash.com/photo-1593941707874-ef25b8b4a92b?w=400&h=300&fit=crop&crop=center'
+      image: 'https://static-cdn.cars24.com/prod/new-car-cms/Toyota/Taisor/2024/05/06/a96bad59-0f97-45fc-ac24-88c904529c44-Taisor-Featured-Image.jpg?w=300&dpr=2.625&optimize=low&format=auto&quality=50'
     }
   ];
 
@@ -37,7 +37,7 @@ export default function Wishlist() {
   }, [startDate, endDate]);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#F3F2F2] text-black">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">My Wishlist (1)</h1>
@@ -45,7 +45,7 @@ export default function Wishlist() {
         {wishlistItems.length > 0 ? (
           <div className="space-y-6">
             {/* Vehicle Card */}
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-start gap-6">
                 {/* Vehicle Image */}
                 <div className="w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
@@ -61,7 +61,7 @@ export default function Wishlist() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-2xl font-bold mb-2">{wishlistItems[0].name}</h3>
-                      <p className="text-gray-400 text-lg">Rs.{wishlistItems[0].price.toFixed(2)}/day</p>
+                      <p className="text-gray-600 text-lg">Rs.{wishlistItems[0].price.toFixed(2)}/day</p>
                     </div>
                     <button className="text-red-500 hover:text-red-400 transition-colors">
                       <Trash2 className="w-6 h-6" />
@@ -71,22 +71,22 @@ export default function Wishlist() {
                   {/* Date Selection */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                      <label className="block text-white font-semibold mb-3">Start Date</label>
+                      <label className="block text-black font-semibold mb-3">Start Date</label>
                       <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder="yyyy-mm-dd"
                       />
                     </div>
                     <div>
-                      <label className="block text-white font-semibold mb-3">End Date</label>
+                      <label className="block text-black font-semibold mb-3">End Date</label>
                       <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder="yyyy-mm-dd"
                       />
                     </div>
@@ -96,12 +96,12 @@ export default function Wishlist() {
             </div>
 
             {/* Total Section */}
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-2xl font-bold">Total Amount</span>
                 <span className="text-2xl font-bold">Rs.{totalAmount.toFixed(0)}</span>
               </div>
-              <p className="text-gray-400 text-sm mb-6">* Price calculated based on selected dates</p>
+              <p className="text-gray-600 text-sm mb-6">* Price calculated based on selected dates</p>
               
               {/* Action Buttons */}
               <div className="space-y-4">
@@ -111,7 +111,7 @@ export default function Wishlist() {
                 
                 <Link 
                   to="/"
-                  className="flex items-center justify-center gap-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 text-gray-700 hover:text-black transition-colors cursor-pointer"
                 >
                   <span className="text-lg">Continue Shopping</span>
                   <VscArrowRight className="text-2xl" />
@@ -123,9 +123,9 @@ export default function Wishlist() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <ShoppingCart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-400 mb-2">No items in wishlist</h2>
-            <p className="text-gray-500 mb-6">Start adding vehicles to your wishlist to see them here.</p>
+            <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-500 mb-2">No items in wishlist</h2>
+            <p className="text-gray-400 mb-6">Start adding vehicles to your wishlist to see them here.</p>
             <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
               Browse Vehicles
             </button>

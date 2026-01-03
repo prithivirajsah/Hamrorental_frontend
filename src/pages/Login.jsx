@@ -38,7 +38,6 @@ export default function Login() {
 
       if (result.success) {
         toast.success('Login successful!');
-        // Redirect to home page or dashboard
         setTimeout(() => {
           const role = response.data?.user?.role;
           if (role === "admin") {
