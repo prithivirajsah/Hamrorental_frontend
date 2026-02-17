@@ -5,9 +5,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Public Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Home from './pages/Home';
-import Vehicles from './pages/Vehicles';
-import HireaDriver from './pages/HireaDriver';
+import Home from './pages/car-rental/Home';
+import Vehicles from './pages/Vehicles/Vehicles';
+import HireaDriver from './pages/hire/HireaDriver';
 import FAQs from './pages/FAQs';
 import Contact from './pages/Contact';
 

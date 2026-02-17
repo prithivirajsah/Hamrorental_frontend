@@ -39,7 +39,7 @@ export default function CarCard({ car }) {
             <span>Air Conditioner</span>
           </div>
         </div>
-
+        
         {/* Button */}
         <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors">
           View Details

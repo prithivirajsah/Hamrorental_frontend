@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import toyotaLogo from '../../assets/brands/toyota.png';
 import fordLogo from '../../assets/brands/ford.png';
 import mercedesLogo from '../../assets/brands/mercedes.png';
@@ -15,22 +15,41 @@ const brands = [
   { name: "Audi", img: audiLogo },
 ];
 
-const CarBrands = () => (
-  <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] flex justify-around items-center bg-[#fcfcfc] rounded-[48px] py-10 px-4 my-8 shadow-md gap-8 max-w-none overflow-x-auto sm:gap-4 sm:py-6 sm:px-2 sm:rounded-[24px] sm:flex-wrap">
-    {brands.map((brand) => (
-      <div
-        className="flex items-center justify-center min-w-[64px] min-h-[48px] opacity-80 grayscale hover:grayscale-0 hover:opacity-100 hover:scale-105 transition-all duration-200 sm:min-w-[48px] sm:min-h-[32px]"
-        key={brand.name}
-        title={brand.name}
-      >
-        <img
-          src={brand.img}
-          alt={brand.name + ' logo'}
-          className="max-h-12 max-w-[100px] w-auto h-auto sm:max-h-8 sm:max-w-[64px]"
-        />
+const ITEMS_PER_PAGE = 6;
+
+const CarBrands = ({ interval = 2300 }) => {
+  const [current, setCurrent] = useState(0);
+  const totalPages = Math.ceil(brands.length / ITEMS_PER_PAGE);
+  const intervalRef = useRef();
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % totalPages);
+    }, interval); // auto-scroll using dynamic interval
+    return () => clearInterval(intervalRef.current);
+  }, [totalPages, interval]);
+
+  const startIdx = current * ITEMS_PER_PAGE;
+  const visibleBrands = brands.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+  return (
+    <section className="px-4 sm:px-6 lg:px-8 py-12 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-center items-center gap-12 w-full overflow-hidden">
+          {visibleBrands.map((brand) => (
+            <div key={brand.name} className="flex flex-col items-center min-w-[160px]">
+              <img
+                src={brand.img}
+                alt={brand.name + 'logo'}
+                className="w-[160px] h-[110px] object-contain rounded-lg shadow-md"
+              />
+              <div className="mt-4 text-2xl font-bold text-red-600 text-center">{brand.name}</div>
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-);
+    </section>
+  );
+};
 
 export default CarBrands;

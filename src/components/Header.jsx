@@ -75,7 +75,7 @@ export default function Header() {
             <img 
               src={HeaderIcon} 
               alt="Hamro Rental Logo" 
-              className="h-8 sm:h-10 w-auto transform hover:scale-105 transition-transform duration-300"
+              className="h-8 sm:h-10 w-auto"
             />
           </div>
 
