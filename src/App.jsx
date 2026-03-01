@@ -15,6 +15,8 @@ import Contact from './pages/Contact';
 // User Protected Pages
 import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
+import UserAddPost from './pages/UserAddPost';
+
 import Layout from './Layout';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import AdminVehicles from './pages/dashboard/AdminVehicles';
@@ -22,6 +24,7 @@ import AdminBookings from './pages/dashboard/AdminBookings';
 import AdminUsers from './pages/dashboard/AdminUsers';
 import AdminDocuments from './pages/dashboard/AdminDocuments';
 import AddPost from './pages/dashboard/AddPost';
+
 
 
 function App() {
@@ -34,7 +37,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
+
           <Route path="/vehicles/:id" element={<CarDetails />} />
+
+
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/hire-a-driver" element={<HireaDriver />} />
           <Route path="/faqs" element={<FAQs />} />
@@ -59,6 +65,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/add-post"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <UserAddPost />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/admin" element={<Layout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="vehicles" element={<AdminVehicles />} />
@@ -67,6 +83,7 @@ function App() {
             <Route path="documents" element={<AdminDocuments />} />
             <Route path="add-post" element={<AddPost />} />
           </Route>
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

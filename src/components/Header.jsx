@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { User, Heart, LogOut } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
 import { useAuth } from '../contexts/AuthContext';
+import UserAddPost from '../pages/UserAddPost';
 
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [showAddPostPopup, setShowAddPostPopup] = useState(false);
   const profileRef = useRef(null);
 
   // Close popup when clicking outside
@@ -32,6 +35,37 @@ export default function Header() {
     logout();
     setShowProfilePopup(false);
   };
+
+  const handleAddPostClick = () => {
+    if (user?.role === 'admin') {
+      navigate('/admin/add-post');
+      return;
+    }
+    setShowAddPostPopup(true);
+    setShowProfilePopup(false);
+  };
+
+  const closeAddPostPopup = () => {
+    setShowAddPostPopup(false);
+  };
+
+  useEffect(() => {
+    if (!showAddPostPopup) return;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeAddPostPopup();
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showAddPostPopup]);
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -85,12 +119,14 @@ export default function Header() {
               <>
                 {/* Add Post Button */}
                 <button 
+                  type="button"
                   className="px-4 sm:px-6 py-2 rounded-xl border font-medium transition-colors"
                   style={{
                     backgroundColor: '#695ED920',
                     borderColor: '#695ED9',
                     color: '#695ED9'
                   }}
+                  onClick={handleAddPostClick}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#695ED930'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#695ED920'}
                 >
@@ -214,6 +250,8 @@ export default function Header() {
         </div>
 
       </div>
+
+      {showAddPostPopup && <UserAddPost asModal onClose={closeAddPostPopup} />}
     </header>
   );
 }
