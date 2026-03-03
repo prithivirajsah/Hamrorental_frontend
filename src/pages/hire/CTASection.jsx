@@ -3,7 +3,7 @@ import { Phone, Mail, ArrowRight } from 'lucide-react';
 
 export default function CTASection() {
   return (
-    <section className="py-24 bg-slate-900 relative overflow-hidden">
+    <section className="py-15 bg-slate-900 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#685ed9]/10 via-transparent to-[#685ed9]/5" />

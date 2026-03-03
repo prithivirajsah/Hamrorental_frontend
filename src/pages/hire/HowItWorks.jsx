@@ -24,7 +24,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-24 bg-slate-900 relative overflow-hidden">
+    <section className="py-15 bg-slate-900 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#685ed9]/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#685ed9]/5 rounded-full blur-3xl" />

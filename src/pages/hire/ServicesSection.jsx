@@ -28,7 +28,7 @@ const services = [
 
 export default function ServicesSection() {
   return (
-    <section className="py-24 bg-gradient-to-b from-white to-slate-50">
+    <section className="py-15 bg-gradient-to-b from-white to-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 bg-[#685ed9]/10 text-[#685ed9] rounded-full text-sm font-medium mb-4">
