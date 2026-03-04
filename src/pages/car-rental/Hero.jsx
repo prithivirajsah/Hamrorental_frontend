@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import BookingForm from './BookingForm';
 
 export default function Hero({ title, subtitle, ctaText }) {
@@ -31,9 +32,20 @@ export default function Hero({ title, subtitle, ctaText }) {
               <p className="text-indigo-100 text-sm sm:text-base mb-6 max-w-md mx-auto lg:mx-0">
                 {subtitle || "Discover the freedom of the open road with our premium car rental service. Quality vehicles, competitive prices."}
               </p>
-              <button className="bg-[#FF9E0C] text-white font-bold px-6 py-2.5 rounded-2xl transition-colors inline-flex items-center gap-2">
-                {ctaText || "View all cars"}
-              </button>
+              <div className="flex flex-wrap items-center gap-3 justify-center lg:justify-start">
+                <Link
+                  to="/vehicles"
+                  className="bg-[#FF9E0C] text-white font-bold px-6 py-2.5 rounded-2xl transition-colors inline-flex items-center gap-2"
+                >
+                  {ctaText || 'Browse Vehicles'}
+                </Link>
+                <Link
+                  to="/hire-a-driver"
+                  className="bg-white/10 border border-white/30 text-white font-bold px-6 py-2.5 rounded-2xl transition-colors inline-flex items-center gap-2 hover:bg-white/20"
+                >
+                  Hire a Driver
+                </Link>
+              </div>
             </div>
 
             {/* Right - Booking Form */}

@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
 import bgImage from '../assets/bg.png';
 import { ToastContainer, toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
-import { getGoogleIdToken } from '../lib/googleIdentity.js';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
@@ -16,7 +14,7 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, googleAuth } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -55,36 +53,6 @@ export default function Login() {
     } catch (error) {
       console.error('Login error:', error);
       toast.error('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      const idToken = await getGoogleIdToken();
-      const result = await googleAuth(idToken);
-
-      if (!result.success) {
-        toast.error(result.error || 'Google login failed.');
-        return;
-      }
-
-      toast.success('Google login successful!');
-      setTimeout(() => {
-        const role = result.user?.role;
-        if (role === "admin") {
-          navigate('/admin');
-        } else if (role === "driver") {
-          navigate('/driver');
-        } else {
-          navigate('/');
-        }
-      }, 600);
-    } catch (error) {
-      console.error('Google login error:', error);
-      toast.error(error.message || 'Google login failed.');
     } finally {
       setIsLoading(false);
     }
@@ -185,23 +153,6 @@ export default function Login() {
               {isLoading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center my-8">
-            <div className="flex-1 h-px bg-white/20"></div>
-            <span className="px-4 text-sm text-white/60">OR</span>
-            <div className="flex-1 h-px bg-white/20"></div>
-          </div>
-
-          {/* Google Login */}
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 group"
-          >
-            <FcGoogle className="w-6 h-6" />
-            <span className="text-white font-medium">Continue with Google</span>
-          </button>
-          
 
           {/* Sign Up Link */}
           <div className="mt-8 text-center">

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, Check, X, AlertCircle } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
 import bgImage from '../assets/bg.png';
 import { ToastContainer, toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
-import { getGoogleIdToken } from '../lib/googleIdentity.js';
 import 'react-toastify/dist/ReactToastify.css';
 
 const calculatePasswordStrength = (password) => {
@@ -58,7 +56,7 @@ export default function Register() {
     message: ''
   });
 
-  const { register, googleAuth } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   // Calculate password strength
@@ -247,28 +245,6 @@ export default function Register() {
                           error.response?.data?.message || 
                           'An unexpected error occurred. Please try again.';
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    try {
-      const idToken = await getGoogleIdToken();
-      const result = await googleAuth(idToken);
-      if (!result.success) {
-        toast.error(result.error || 'Google signup failed.');
-        return;
-      }
-
-      toast.success('Google sign up successful!');
-      setTimeout(() => {
-        navigate('/');
-      }, 600);
-    } catch (error) {
-      console.error('Google signup error:', error);
-      toast.error(error.message || 'Google signup failed.');
     } finally {
       setIsLoading(false);
     }
@@ -473,22 +449,6 @@ export default function Register() {
               {isLoading ? 'Creating account...' : 'Create my account'}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 h-px bg-gray-600"></div>
-            <span className="px-4 text-sm text-gray-400">OR</span>
-            <div className="flex-1 h-px bg-gray-600"></div>
-          </div>
-
-          {/* Google Signup */}
-          <button
-            onClick={handleGoogleSignup}
-            className="w-full h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center gap-3 transition-all duration-300"
-          >
-            <FcGoogle className="w-6 h-6" />
-            <span className="text-white font-medium">Sign up with Google</span>
-          </button>
 
           {/* Sign In Link */}
           <div className="mt-6 text-center">
