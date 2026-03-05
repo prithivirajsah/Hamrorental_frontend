@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FaClock, FaEnvelope, FaLocationDot, FaPhone } from 'react-icons/fa6';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
@@ -14,7 +16,6 @@ export default function Contact() {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitFeedback, setSubmitFeedback] = useState({ type: '', message: '' });
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -26,8 +27,6 @@ export default function Contact() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    setSubmitFeedback({ type: '', message: '' });
     setIsSubmitting(true);
 
     const payload = {
@@ -41,10 +40,7 @@ export default function Contact() {
 
     try {
       const response = await api.sendContactMessage(payload);
-      setSubmitFeedback({
-        type: 'success',
-        message: response?.message || 'Your message has been sent successfully.',
-      });
+      toast.success(response?.message || 'Your message has been sent successfully.');
       setFormData({
         name: '',
         email: '',
@@ -63,7 +59,7 @@ export default function Contact() {
         errorMessage = detail;
       }
 
-      setSubmitFeedback({ type: 'error', message: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -238,16 +234,6 @@ export default function Contact() {
                 />
               </div>
 
-              {submitFeedback.message && (
-                <p
-                  className={`text-sm ${
-                    submitFeedback.type === 'success' ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {submitFeedback.message}
-                </p>
-              )}
-
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -259,6 +245,19 @@ export default function Contact() {
           </div>
         </section>
       </main>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
       <Footer />
     </div>

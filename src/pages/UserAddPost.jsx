@@ -3,18 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus, X, Upload, Loader2 } from 'lucide-react';
+import { Car, IndianRupee, MapPin, Plus, Upload, UserRound, X, Loader2 } from 'lucide-react';
 
 const initialForm = {
   title: '',
-  category: 'Car',
   location: '',
   pricePerDay: '',
   description: '',
@@ -33,16 +25,20 @@ export default function UserAddPost({ asModal = false, onClose }) {
   };
 
   const addFeature = () => {
-    const trimmedFeature = newFeature.trim();
-    if (!trimmedFeature || form.features.includes(trimmedFeature)) return;
-    setForm((prev) => ({ ...prev, features: [...prev.features, trimmedFeature] }));
+    const trimmed = newFeature.trim();
+    if (!trimmed || form.features.includes(trimmed)) return;
+
+    setForm((prev) => ({
+      ...prev,
+      features: [...prev.features, trimmed],
+    }));
     setNewFeature('');
   };
 
-  const removeFeature = (featureToRemove) => {
+  const removeFeature = (item) => {
     setForm((prev) => ({
       ...prev,
-      features: prev.features.filter((feature) => feature !== featureToRemove),
+      features: prev.features.filter((feature) => feature !== item),
     }));
   };
 
@@ -50,17 +46,17 @@ export default function UserAddPost({ asModal = false, onClose }) {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const newImageUrls = files.map((file) => URL.createObjectURL(file));
+    const urls = files.map((file) => URL.createObjectURL(file));
     setForm((prev) => ({
       ...prev,
-      images: [...prev.images, ...newImageUrls],
+      images: [...prev.images, ...urls],
     }));
   };
 
-  const removeImage = (imageToRemove) => {
+  const removeImage = (item) => {
     setForm((prev) => ({
       ...prev,
-      images: prev.images.filter((image) => image !== imageToRemove),
+      images: prev.images.filter((image) => image !== item),
     }));
   };
 
@@ -69,30 +65,28 @@ export default function UserAddPost({ asModal = false, onClose }) {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      window.alert('Post UI submitted successfully. Backend integration can be connected next.');
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      window.alert('Post submitted successfully.');
       setForm(initialForm);
       setNewFeature('');
-      if (asModal && onClose) {
-        onClose();
-      }
+      if (asModal && onClose) onClose();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formContent = (
+  const content = (
     <>
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Add Post</h1>
-          <p className="text-sm text-gray-500 mt-1">Create your listing with the required details.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create New Post</h1>
+          <p className="text-sm text-gray-500 mt-1">Publish your vehicle listing in a few quick steps.</p>
         </div>
         {asModal && onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center"
+            className="w-9 h-9 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center"
             aria-label="Close add post popup"
           >
             <X className="w-4 h-4" />
@@ -101,10 +95,14 @@ export default function UserAddPost({ asModal = false, onClose }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Post Details</h2>
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm">
+          <div className="flex items-center gap-2 mb-5">
+            <Car className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Vehicle Details</h2>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            <div className="sm:col-span-2">
               <Label>Post Title *</Label>
               <Input
                 className="mt-1"
@@ -116,55 +114,48 @@ export default function UserAddPost({ asModal = false, onClose }) {
             </div>
 
             <div>
-              <Label>Category *</Label>
-              <Select value={form.category} onValueChange={(value) => setField('category', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Car">Car</SelectItem>
-                  <SelectItem value="Bike">Bike</SelectItem>
-                  <SelectItem value="Scooter">Scooter</SelectItem>
-                  <SelectItem value="Van">Van</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Price per Day (NPR) *</Label>
+              <div className="relative mt-1">
+                <IndianRupee className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.pricePerDay}
+                  onChange={(event) => setField('pricePerDay', event.target.value)}
+                  placeholder="e.g. 5000"
+                  className="pl-9"
+                  required
+                />
+              </div>
             </div>
 
             <div>
               <Label>Location *</Label>
-              <Input
-                className="mt-1"
-                value={form.location}
-                onChange={(event) => setField('location', event.target.value)}
-                placeholder="e.g. Kathmandu"
-                required
-              />
+              <div className="relative mt-1">
+                <MapPin className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={form.location}
+                  onChange={(event) => setField('location', event.target.value)}
+                  placeholder="e.g. Kathmandu"
+                  className="pl-9"
+                  required
+                />
+              </div>
             </div>
 
             <div>
-              <Label>Price per Day (NPR) *</Label>
-              <Input
-                className="mt-1"
-                type="number"
-                min={0}
-                step={1}
-                value={form.pricePerDay}
-                onChange={(event) => setField('pricePerDay', event.target.value)}
-                placeholder="e.g. 5000"
-                required
-              />
-            </div>
-
-            <div className="sm:col-span-2">
               <Label>Contact Number *</Label>
-              <Input
-                className="mt-1"
-                value={form.contactNumber}
-                onChange={(event) => setField('contactNumber', event.target.value)}
-                placeholder="e.g. 98XXXXXXXX"
-                required
-              />
+              <div className="relative mt-1">
+                <UserRound className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={form.contactNumber}
+                  onChange={(event) => setField('contactNumber', event.target.value)}
+                  placeholder="e.g. 98XXXXXXXX"
+                  className="pl-9"
+                  required
+                />
+              </div>
             </div>
 
             <div className="sm:col-span-2">
@@ -173,26 +164,26 @@ export default function UserAddPost({ asModal = false, onClose }) {
                 className="mt-1 min-h-28"
                 value={form.description}
                 onChange={(event) => setField('description', event.target.value)}
-                placeholder="Describe your vehicle, condition, and any extra details..."
+                placeholder="Describe condition, features, pickup process, and any extra details..."
                 required
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Features</h2>
           <div className="flex gap-2">
             <Input
               value={newFeature}
               onChange={(event) => setNewFeature(event.target.value)}
+              placeholder="Add feature (AC, GPS, Bluetooth...)"
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();
                   addFeature();
                 }
               }}
-              placeholder="Add a feature (AC, GPS, Bluetooth...)"
             />
             <Button type="button" variant="outline" onClick={addFeature}>
               <Plus className="w-4 h-4" />
@@ -201,15 +192,12 @@ export default function UserAddPost({ asModal = false, onClose }) {
 
           {form.features.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
-              {form.features.map((feature) => (
-                <span
-                  key={feature}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-sm"
-                >
-                  {feature}
+              {form.features.map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-sm">
+                  {item}
                   <button
                     type="button"
-                    onClick={() => removeFeature(feature)}
+                    onClick={() => removeFeature(item)}
                     className="text-indigo-500 hover:text-indigo-700"
                   >
                     <X className="w-3 h-3" />
@@ -220,11 +208,11 @@ export default function UserAddPost({ asModal = false, onClose }) {
           )}
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {form.images.map((image) => (
-              <div key={image} className="relative group aspect-video rounded-xl overflow-hidden">
+              <div key={image} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-100">
                 <img src={image} alt="Uploaded" className="w-full h-full object-cover" />
                 <button
                   type="button"
@@ -236,8 +224,9 @@ export default function UserAddPost({ asModal = false, onClose }) {
               </div>
             ))}
 
-            <label className="aspect-video rounded-xl border-2 border-dashed border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors flex items-center justify-center cursor-pointer">
+            <label className="aspect-video rounded-xl border-2 border-dashed border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors flex flex-col items-center justify-center cursor-pointer gap-1">
               <Upload className="w-5 h-5 text-gray-400" />
+              <span className="text-xs text-gray-500">Upload</span>
               <input
                 type="file"
                 accept="image/*"
@@ -247,7 +236,6 @@ export default function UserAddPost({ asModal = false, onClose }) {
               />
             </label>
           </div>
-          <p className="text-xs text-gray-500">Upload one or more images for your post.</p>
         </div>
 
         <div className="flex justify-end gap-2">
@@ -256,14 +244,14 @@ export default function UserAddPost({ asModal = false, onClose }) {
               Cancel
             </Button>
           )}
-          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={isSubmitting}>
+          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-36" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Submitting...
               </>
             ) : (
-              'Submit Post'
+              'Publish Post'
             )}
           </Button>
         </div>
@@ -273,15 +261,12 @@ export default function UserAddPost({ asModal = false, onClose }) {
 
   if (asModal) {
     return (
-      <div
-        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-50 p-6 sm:p-8"
           onClick={(event) => event.stopPropagation()}
         >
-          {formContent}
+          {content}
         </div>
       </div>
     );
@@ -289,7 +274,7 @@ export default function UserAddPost({ asModal = false, onClose }) {
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">{formContent}</div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">{content}</div>
     </div>
   );
 }
