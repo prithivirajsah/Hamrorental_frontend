@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Car, IndianRupee, MapPin, Plus, Upload, UserRound, X, Loader2 } from 'lucide-react';
+import api from '@/api';
 
 const initialForm = {
   title: '',
@@ -13,6 +14,7 @@ const initialForm = {
   contactNumber: '',
   features: [],
   images: [],
+  imageFiles: [],
 };
 
 const presetFeatures = [
@@ -80,13 +82,20 @@ export default function UserAddPost({ asModal = false, onClose }) {
     setForm((prev) => ({
       ...prev,
       images: [...prev.images, ...urls],
+      imageFiles: [...prev.imageFiles, ...files],
     }));
   };
 
   const removeImage = (item) => {
+    const imageIndex = form.images.findIndex((image) => image === item);
+    if (item.startsWith('blob:')) {
+      URL.revokeObjectURL(item);
+    }
+
     setForm((prev) => ({
       ...prev,
       images: prev.images.filter((image) => image !== item),
+      imageFiles: prev.imageFiles.filter((_, index) => index !== imageIndex),
     }));
   };
 
@@ -95,11 +104,34 @@ export default function UserAddPost({ asModal = false, onClose }) {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const payload = new FormData();
+      payload.append('post_title', form.title.trim());
+      payload.append('price_per_day', String(form.pricePerDay));
+      payload.append('location', form.location.trim());
+      payload.append('contact_number', form.contactNumber.trim());
+      payload.append('description', form.description.trim());
+      payload.append('features', JSON.stringify(form.features));
+
+      form.imageFiles.forEach((file) => {
+        payload.append('images', file);
+      });
+
+      await api.createPost(payload);
       window.alert('Post submitted successfully.');
+      form.images.forEach((image) => {
+        if (image.startsWith('blob:')) {
+          URL.revokeObjectURL(image);
+        }
+      });
       setForm(initialForm);
       setNewFeature('');
       if (asModal && onClose) onClose();
+    } catch (error) {
+      const backendError = error?.response?.data?.detail;
+      const message = Array.isArray(backendError)
+        ? backendError.map((item) => item.msg || item).join(', ')
+        : backendError || 'Failed to submit post. Please try again.';
+      window.alert(message);
     } finally {
       setIsSubmitting(false);
     }

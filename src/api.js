@@ -91,6 +91,52 @@ const api = {
     return response.data;
   },
 
+  // Post endpoints
+  async createPost(formData) {
+    const response = await axiosInstance.post("/posts", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  async getPosts(params = {}) {
+    const response = await axiosInstance.get("/posts", { params });
+    return response.data;
+  },
+
+  async getMyPosts(params = {}) {
+    const response = await axiosInstance.get("/posts/me", { params });
+    return response.data;
+  },
+
+  async getPostById(postId) {
+    const response = await axiosInstance.get(`/posts/${postId}`);
+    return response.data;
+  },
+
+  // Booking endpoints
+  async createBooking(data) {
+    const response = await axiosInstance.post('/bookings', data);
+    return response.data;
+  },
+
+  async getBookings(params = {}) {
+    const response = await axiosInstance.get('/bookings', { params });
+    return response.data;
+  },
+
+  async getMyBookings(params = {}) {
+    const response = await axiosInstance.get('/bookings/me', { params });
+    return response.data;
+  },
+
+  async updateBookingStatus(bookingId, status) {
+    const response = await axiosInstance.patch(`/bookings/${bookingId}/status`, { status });
+    return response.data;
+  },
+
   // Wishlist endpoints (will be implemented when backend has them)
   async getWishlist() {
     const response = await axiosInstance.get("/wishlist");

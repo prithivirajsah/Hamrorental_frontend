@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function CarCard({ car }) {
   const navigate = useNavigate();
+  const featureOne = car.features?.[0] || car.fuel || 'PB 95';
+  const featureTwo = car.features?.[1] || 'Air Conditioner';
 
   const handleViewDetails = () => {
     navigate(`/vehicles/${car.id}`, { state: { car } });
@@ -39,11 +41,11 @@ export default function CarCard({ car }) {
           </div>
           <div className="flex items-center gap-1.5">
             <Users className="w-4 h-4" />
-            <span>PB 95</span>
+            <span>{featureOne}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Wind className="w-4 h-4" />
-            <span>Air Conditioner</span>
+            <span>{featureTwo}</span>
           </div>
         </div>
         

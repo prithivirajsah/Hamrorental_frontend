@@ -10,6 +10,7 @@ import api from '../../api';
 
 export default function Home() {
   const [homeData, setHomeData] = useState(null);
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -25,7 +26,22 @@ export default function Home() {
       }
     };
 
+    const loadPosts = async () => {
+      try {
+        const data = await api.getPosts({ limit: 12 });
+        if (isMounted) {
+          setPosts(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Failed to load posts:", error);
+        if (isMounted) {
+          setPosts([]);
+        }
+      }
+    };
+
     loadHomeData();
+    loadPosts();
 
     return () => {
       isMounted = false;
@@ -41,7 +57,7 @@ export default function Home() {
         ctaText={homeData?.cta_text}
       />
       <Features items={homeData?.features} />
-      <CarListing vehicles={homeData?.featured_vehicles} />
+      <CarListing vehicles={posts.length > 0 ? posts : homeData?.featured_vehicles} />
       <CarBrands />
       <BookingSteps />
       <Footer />

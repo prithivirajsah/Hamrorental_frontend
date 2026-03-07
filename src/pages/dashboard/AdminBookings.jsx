@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminData } from '@/api/adminDataClient';
 import { CalendarDays, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import api from '@/api';
 
 const formatDate = (value) => {
   if (!value) return '';
@@ -20,11 +20,11 @@ export default function AdminBookings() {
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => adminData.entities.Booking.list('-created_date'),
+    queryFn: () => api.getBookings({ limit: 200 }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => adminData.entities.Booking.update(id, { status }),
+    mutationFn: ({ id, status }) => api.updateBookingStatus(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bookings'] }),
   });
 

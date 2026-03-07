@@ -13,6 +13,17 @@ export default function CarDetails() {
   const location = useLocation();
   const [vehicleFromApi, setVehicleFromApi] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingMessage, setBookingMessage] = useState('');
+  const [bookingError, setBookingError] = useState('');
+  const [bookingForm, setBookingForm] = useState({
+    pickup_location: '',
+    return_location: '',
+    start_date: '',
+    end_date: '',
+    note: '',
+  });
 
   const stateCar = location.state?.car || null;
 
@@ -24,27 +35,20 @@ export default function CarDetails() {
 
       setLoading(true);
       try {
-        const result = await api.getVehicles();
-        const vehicles = Array.isArray(result?.items)
-          ? result.items
-          : Array.isArray(result)
-            ? result
-            : [];
-
-        const matched = vehicles.find((vehicle) => String(vehicle.id) === String(id));
+        const matched = await api.getPostById(id);
         if (matched) {
-          const normalizedCurrency = !matched.currency || matched.currency === '$' || String(matched.currency).toUpperCase() === 'USD'
-            ? 'Rs.'
-            : matched.currency;
-
+          const normalizedCurrency = !matched.currency || matched.currency === '$' || String(matched.currency).toUpperCase() === 'USD' ? 'Rs.' : matched.currency;
           setVehicleFromApi({
             id: matched.id,
-            name: matched.name,
+            name: matched.post_title || matched.name,
             price: `${normalizedCurrency} ${matched.price_per_day ?? matched.price ?? 0}`,
             transmission: matched.transmission || matched.category || 'Automatic',
-            image: matched.image_url || matched.image || fallbackImage,
+            image: matched.image_urls?.[0] || matched.image_url || matched.image || fallbackImage,
             category: matched.category || 'Vehicle',
-            fuel: matched.fuel || 'PB 95',
+            fuel: matched.features?.[0] || matched.fuel || 'PB 95',
+            features: Array.isArray(matched.features) ? matched.features : [],
+            description: matched.description || '',
+            location: matched.location || '',
           });
         }
       } catch (error) {
@@ -68,6 +72,51 @@ export default function CarDetails() {
     }
     return vehicleFromApi;
   }, [stateCar, vehicleFromApi]);
+
+  const onBookingFieldChange = (field, value) => {
+    setBookingForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBookNow = async () => {
+    setBookingError('');
+    setBookingMessage('');
+
+    if (!bookingForm.pickup_location || !bookingForm.return_location || !bookingForm.start_date || !bookingForm.end_date) {
+      setBookingError('Please fill all required booking fields.');
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const response = await api.createBooking({
+        post_id: Number(id),
+        pickup_location: bookingForm.pickup_location,
+        return_location: bookingForm.return_location,
+        start_date: bookingForm.start_date,
+        end_date: bookingForm.end_date,
+        note: bookingForm.note || undefined,
+      });
+
+      setBookingMessage(response?.message || 'Booking created successfully.');
+      setBookingForm({
+        pickup_location: '',
+        return_location: '',
+        start_date: '',
+        end_date: '',
+        note: '',
+      });
+      setShowBookingForm(false);
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setBookingError(detail.map((item) => item.msg || String(item)).join(', '));
+      } else {
+        setBookingError(detail || 'Failed to create booking. Please login and try again.');
+      }
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F3F2F2]">
@@ -99,6 +148,14 @@ export default function CarDetails() {
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">{car.name}</h1>
                 <p className="text-2xl font-bold text-indigo-600 mb-6">{car.price} <span className="text-sm text-gray-500 font-normal">per day</span></p>
 
+                {car.location ? (
+                  <p className="text-sm text-gray-500 mb-4">Location: {car.location}</p>
+                ) : null}
+
+                {car.description ? (
+                  <p className="text-gray-700 mb-6">{car.description}</p>
+                ) : null}
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
                   <div className="border border-gray-100 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
@@ -123,9 +180,78 @@ export default function CarDetails() {
                   </div>
                 </div>
 
-                <button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-7 rounded-lg transition-colors">
-                  Book Now
+                <button
+                  onClick={() => setShowBookingForm((prev) => !prev)}
+                  className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-7 rounded-lg transition-colors"
+                >
+                  {showBookingForm ? 'Hide Booking Form' : 'Book Now'}
                 </button>
+
+                {bookingMessage ? (
+                  <p className="text-sm text-green-700 mt-4">{bookingMessage}</p>
+                ) : null}
+                {bookingError ? (
+                  <p className="text-sm text-red-600 mt-4">{bookingError}</p>
+                ) : null}
+
+                {showBookingForm ? (
+                  <div className="mt-6 border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm text-gray-600">Pickup Location</label>
+                      <input
+                        value={bookingForm.pickup_location}
+                        onChange={(event) => onBookingFieldChange('pickup_location', event.target.value)}
+                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+                        placeholder="e.g. Kathmandu"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-600">Return Location</label>
+                      <input
+                        value={bookingForm.return_location}
+                        onChange={(event) => onBookingFieldChange('return_location', event.target.value)}
+                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+                        placeholder="e.g. Pokhara"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-600">Start Date</label>
+                      <input
+                        type="date"
+                        value={bookingForm.start_date}
+                        onChange={(event) => onBookingFieldChange('start_date', event.target.value)}
+                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-600">End Date</label>
+                      <input
+                        type="date"
+                        value={bookingForm.end_date}
+                        onChange={(event) => onBookingFieldChange('end_date', event.target.value)}
+                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-sm text-gray-600">Note (optional)</label>
+                      <textarea
+                        value={bookingForm.note}
+                        onChange={(event) => onBookingFieldChange('note', event.target.value)}
+                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 min-h-20"
+                        placeholder="Any additional request"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <button
+                        onClick={handleBookNow}
+                        disabled={bookingLoading}
+                        className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-6 rounded-lg disabled:opacity-60"
+                      >
+                        {bookingLoading ? 'Booking...' : 'Confirm Booking'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </section>
