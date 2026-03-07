@@ -122,7 +122,7 @@ export default function AdminBookings() {
                       </p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{booking.total_days || '—'}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">${booking.total_price?.toLocaleString() || '0'}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">Rs. {booking.total_price?.toLocaleString() || '0'}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[booking.status] || 'bg-gray-100 text-gray-700'}`}>
                         {booking.status}

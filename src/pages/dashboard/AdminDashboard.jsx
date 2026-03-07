@@ -3,7 +3,26 @@ import { useQuery } from '@tanstack/react-query';
 import { adminData } from '@/api/adminDataClient';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Car, Users, CalendarDays, DollarSign } from 'lucide-react';
+import { Car, Users, CalendarDays } from 'lucide-react';
+
+const NepaliRupeeIcon = ({ className = '' }) => (
+  <span className={`${className} text-[11px] font-semibold leading-none`}>Rs</span>
+);
+
+const FEATURE_PRESETS = [
+  'Automatic',
+  'PB 95',
+  'Air Conditioner',
+  'GPS Navigation',
+  'Bluetooth',
+  'Rear Camera',
+  'Parking Sensors',
+  'Cruise Control',
+  'ABS',
+  'Airbags',
+  'USB Charging',
+  'Sunroof',
+];
 
 export default function AdminDashboard() {
   const { data: vehicles = [] } = useQuery({
@@ -32,7 +51,7 @@ export default function AdminDashboard() {
     { label: 'Total Vehicles', value: vehicles.length, sub: `${availableVehicles} available`, icon: Car, color: 'bg-blue-50 text-blue-600' },
     { label: 'Registered Users', value: users.length, sub: 'all time', icon: Users, color: 'bg-purple-50 text-purple-600' },
     { label: 'Active Bookings', value: activeBookings, sub: `${bookings.length} total`, icon: CalendarDays, color: 'bg-amber-50 text-amber-600' },
-    { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, sub: 'confirmed + completed', icon: DollarSign, color: 'bg-green-50 text-green-600' },
+    { label: 'Total Revenue', value: `Rs. ${totalRevenue.toLocaleString()}`, sub: 'confirmed + completed', icon: NepaliRupeeIcon, color: 'bg-green-50 text-green-600' },
   ];
 
   const statusColors = {
@@ -94,7 +113,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-gray-400">{booking.user_email}</p>
                     </td>
                     <td className="px-6 py-3.5 text-sm text-gray-600">{booking.vehicle_name || 'N/A'}</td>
-                    <td className="px-6 py-3.5 text-sm font-medium text-gray-900">${booking.total_price?.toLocaleString() || '0'}</td>
+                    <td className="px-6 py-3.5 text-sm font-medium text-gray-900">Rs. {booking.total_price?.toLocaleString() || '0'}</td>
                     <td className="px-6 py-3.5">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[booking.status] || 'bg-gray-100 text-gray-700'}`}>
                         {booking.status}
@@ -150,6 +169,26 @@ export default function AdminDashboard() {
               })}
               {vehicles.length === 0 && <p className="text-sm text-gray-400">No vehicles added yet</p>}
             </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Feature Presets</h3>
+            <div className="flex flex-wrap gap-2">
+              {FEATURE_PRESETS.map((feature) => (
+                <span
+                  key={feature}
+                  className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                >
+                  {feature}
+                </span>
+              ))}
+            </div>
+            <Link
+              to={createPageUrl('AddPost')}
+              className="inline-block mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              Use these in Add Vehicle →
+            </Link>
           </div>
         </div>
       </div>

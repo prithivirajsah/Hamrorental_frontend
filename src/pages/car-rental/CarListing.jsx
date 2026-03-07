@@ -52,7 +52,7 @@ export default function CarListing({ vehicles }) {
 		? vehicles.map((vehicle) => ({
 				id: vehicle.id,
 				name: vehicle.name,
-				price: `${vehicle.currency} ${vehicle.price_per_day}`,
+				price: `${!vehicle.currency || vehicle.currency === '$' || String(vehicle.currency).toUpperCase() === 'USD' ? 'Rs.' : vehicle.currency} ${vehicle.price_per_day}`,
 				transmission: vehicle.transmission || vehicle.category,
 				image: vehicle.image_url,
 				category: vehicle.category || 'Vehicle',

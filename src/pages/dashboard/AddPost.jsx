@@ -18,6 +18,21 @@ const DEFAULT_FORM = {
   images: [],
 };
 
+const PRESET_FEATURES = [
+  'Automatic',
+  'PB 95',
+  'Air Conditioner',
+  'GPS Navigation',
+  'Bluetooth',
+  'Rear Camera',
+  'Parking Sensors',
+  'Cruise Control',
+  'ABS',
+  'Airbags',
+  'USB Charging',
+  'Sunroof',
+];
+
 export default function AddPost() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -65,10 +80,27 @@ export default function AddPost() {
   const removeImage = (idx) => setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
 
   const addFeature = () => {
-    if (newFeature.trim()) {
-      setForm(prev => ({ ...prev, features: [...(prev.features || []), newFeature.trim()] }));
+    const trimmed = newFeature.trim();
+    if (!trimmed) return;
+
+    const alreadyExists = (form.features || []).some(
+      (feature) => feature.toLowerCase() === trimmed.toLowerCase(),
+    );
+
+    if (!alreadyExists) {
+      setForm(prev => ({ ...prev, features: [...(prev.features || []), trimmed] }));
       setNewFeature('');
     }
+  };
+
+  const togglePresetFeature = (feature) => {
+    const hasFeature = (form.features || []).includes(feature);
+    if (hasFeature) {
+      setForm(prev => ({ ...prev, features: prev.features.filter((item) => item !== feature) }));
+      return;
+    }
+
+    setForm(prev => ({ ...prev, features: [...(prev.features || []), feature] }));
   };
 
   const removeFeature = (idx) => setForm(prev => ({ ...prev, features: prev.features.filter((_, i) => i !== idx) }));
@@ -181,11 +213,11 @@ export default function AddPost() {
           <h2 className="font-semibold text-gray-900 mb-4">Pricing</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Price per Day (USD) *</Label>
+              <Label>Price per Day (NPR) *</Label>
               <Input className="mt-1" type="number" value={form.price_per_day} onChange={e => set('price_per_day', e.target.value)} placeholder="0.00" min={0} step={0.01} required />
             </div>
             <div>
-              <Label>Price per Hour (USD) <span className="text-gray-400 font-normal">optional</span></Label>
+              <Label>Price per Hour (NPR) <span className="text-gray-400 font-normal">optional</span></Label>
               <Input className="mt-1" type="number" value={form.price_per_hour} onChange={e => set('price_per_hour', e.target.value)} placeholder="0.00" min={0} step={0.01} />
             </div>
           </div>
@@ -236,12 +268,31 @@ export default function AddPost() {
             </div>
             <div>
               <Label>Features</Label>
+              <div className="flex flex-wrap gap-2 mt-2 mb-3">
+                {PRESET_FEATURES.map((feature) => {
+                  const isSelected = (form.features || []).includes(feature);
+                  return (
+                    <button
+                      key={feature}
+                      type="button"
+                      onClick={() => togglePresetFeature(feature)}
+                      className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                      }`}
+                    >
+                      {feature}
+                    </button>
+                  );
+                })}
+              </div>
               <div className="flex gap-2 mt-1">
                 <Input
                   value={newFeature}
                   onChange={e => setNewFeature(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                  placeholder="e.g. Air Conditioning, GPS, Bluetooth..."
+                  placeholder="Add custom feature..."
                 />
                 <Button type="button" variant="outline" onClick={addFeature}>
                   <Plus className="w-4 h-4" />

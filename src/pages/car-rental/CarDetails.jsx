@@ -33,10 +33,14 @@ export default function CarDetails() {
 
         const matched = vehicles.find((vehicle) => String(vehicle.id) === String(id));
         if (matched) {
+          const normalizedCurrency = !matched.currency || matched.currency === '$' || String(matched.currency).toUpperCase() === 'USD'
+            ? 'Rs.'
+            : matched.currency;
+
           setVehicleFromApi({
             id: matched.id,
             name: matched.name,
-            price: `${matched.currency || 'Rs.'} ${matched.price_per_day ?? matched.price ?? 0}`,
+            price: `${normalizedCurrency} ${matched.price_per_day ?? matched.price ?? 0}`,
             transmission: matched.transmission || matched.category || 'Automatic',
             image: matched.image_url || matched.image || fallbackImage,
             category: matched.category || 'Vehicle',

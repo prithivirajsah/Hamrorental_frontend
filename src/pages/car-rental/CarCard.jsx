@@ -10,13 +10,13 @@ export default function CarCard({ car }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Car Image */}
       <div className="relative h-40 bg-gray-50 flex items-center justify-center overflow-hidden">
-        <img 
-          src={car.image} 
+        <img
+          src={car.image}
           alt={car.name}
-          className="w-4/5 h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+          className="w-4/5 h-auto object-contain"
         />
       </div>
       
@@ -50,7 +50,7 @@ export default function CarCard({ car }) {
         {/* Button */}
         <button
           onClick={handleViewDetails}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors"
+          className="w-full bg-indigo-600 text-white font-medium py-2.5 rounded-lg"
         >
           View Details
         </button>

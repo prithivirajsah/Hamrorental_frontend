@@ -15,6 +15,21 @@ const initialForm = {
   images: [],
 };
 
+const presetFeatures = [
+  'Automatic',
+  'PB 95',
+  'Air Conditioner',
+  'GPS Navigation',
+  'Bluetooth',
+  'Rear Camera',
+  'Parking Sensors',
+  'Cruise Control',
+  'ABS',
+  'Airbags',
+  'USB Charging',
+  'Sunroof',
+];
+
 export default function UserAddPost({ asModal = false, onClose }) {
   const [form, setForm] = useState(initialForm);
   const [newFeature, setNewFeature] = useState('');
@@ -26,13 +41,28 @@ export default function UserAddPost({ asModal = false, onClose }) {
 
   const addFeature = () => {
     const trimmed = newFeature.trim();
-    if (!trimmed || form.features.includes(trimmed)) return;
+    const alreadyExists = form.features.some(
+      (feature) => feature.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (!trimmed || alreadyExists) return;
 
     setForm((prev) => ({
       ...prev,
       features: [...prev.features, trimmed],
     }));
     setNewFeature('');
+  };
+
+  const togglePresetFeature = (feature) => {
+    if (form.features.includes(feature)) {
+      removeFeature(feature);
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      features: [...prev.features, feature],
+    }));
   };
 
   const removeFeature = (item) => {
@@ -173,11 +203,30 @@ export default function UserAddPost({ asModal = false, onClose }) {
 
         <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Features</h2>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {presetFeatures.map((feature) => {
+              const isSelected = form.features.includes(feature);
+              return (
+                <button
+                  key={feature}
+                  type="button"
+                  onClick={() => togglePresetFeature(feature)}
+                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                  }`}
+                >
+                  {feature}
+                </button>
+              );
+            })}
+          </div>
           <div className="flex gap-2">
             <Input
               value={newFeature}
               onChange={(event) => setNewFeature(event.target.value)}
-              placeholder="Add feature (AC, GPS, Bluetooth...)"
+              placeholder="Add custom feature..."
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();

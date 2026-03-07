@@ -118,7 +118,7 @@ export default function AdminVehicles() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{vehicle.category || '—'}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">${vehicle.price_per_day}/day</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">Rs. {vehicle.price_per_day}/day</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusConfig[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
                         {vehicle.status}
