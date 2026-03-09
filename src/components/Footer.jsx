@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { FaLocationDot, FaPhone } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
@@ -55,34 +56,34 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/about" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   About
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/contact" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   Contact
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/services" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   Services 
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/our-fleet" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   Our Fleet
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/customer-care" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   Customer Care
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -92,16 +93,16 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Our Services</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/self-drive" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   Self Drive
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
+                <Link to="/with-driver" className="text-gray-700 hover-custom-purple font-medium inline-block transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group">
                   With Driver
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 custom-purple-underline transition-all duration-300 group-hover:w-full"></span>
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

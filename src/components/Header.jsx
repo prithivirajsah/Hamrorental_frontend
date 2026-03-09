@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
+import { MdOutlineReviews } from "react-icons/md";
+import { IoReorderThreeSharp } from "react-icons/io5";
 import { User, Heart, LogOut } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
 import { useAuth } from '../contexts/AuthContext';
@@ -178,7 +180,25 @@ export default function Header() {
                           <User className="w-5 h-5" />
                           <span>My Profile</span>
                         </Link>
-                        
+
+                        <Link 
+                          to="/Orders" 
+                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setShowProfilePopup(false)}
+                        >
+                          <IoReorderThreeSharp  className="w-5 h-5" />
+                          <span>My Order</span>
+                        </Link>
+
+                        <Link 
+                          to="/Reviews" 
+                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setShowProfilePopup(false)}
+                        >
+                          <MdOutlineReviews className="w-5 h-5" />
+                          <span>My Reviews</span>
+                        </Link>
+
                         <Link 
                           to="/wishlist" 
                           className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"

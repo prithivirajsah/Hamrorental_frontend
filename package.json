@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
+    "@netlify/neon": "^0.1.2",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.2",

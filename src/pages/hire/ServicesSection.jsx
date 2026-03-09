@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Calendar, Plane, MapPin, Briefcase } from 'lucide-react';
+import { Clock, Calendar, MapPin, Briefcase } from 'lucide-react';
 import ServiceCard from './ServiceCard';
 
 const services = [

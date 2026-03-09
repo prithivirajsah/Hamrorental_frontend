@@ -1,14 +1,17 @@
+const isProd = import.meta.env.PROD;
+const isDev = import.meta.env.DEV;
+
 // Environment configuration
 export const config = {
   // Backend API URLs
-  API_BASE_URL: process.env.NODE_ENV === "production"
+  API_BASE_URL: isProd
     ? "https://hamrorental-backend.onrender.com"
     : "http://127.0.0.1:8000", 
     // Use local mock server for development
   
   // Frontend URLs
-  FRONTEND_URL: process.env.NODE_ENV === "production"
-    ? "https://your-frontend-domain.com"
+  FRONTEND_URL: isProd
+    ? "https://hamrocarrental.netlify.app"
     : "http://localhost:5173",
    
   // App settings
@@ -52,8 +55,8 @@ export const config = {
   TOKEN_KEY: "token",
   
   // Environment check
-  isDevelopment: () => process.env.NODE_ENV === "development",
-  isProduction: () => process.env.NODE_ENV === "production",
+  isDevelopment: () => isDev,
+  isProduction: () => isProd,
 };
 
 export default config;

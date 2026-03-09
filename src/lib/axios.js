@@ -18,7 +18,7 @@ axiosInstance.interceptors.request.use(
     }
     
     // Log request details in development
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log('API Request:', {
         method: config.method?.toUpperCase(),
         url: config.baseURL + config.url,
@@ -38,7 +38,7 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => {
     // Log successful responses in development
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log('API Response Success:', {
         status: response.status,
         statusText: response.statusText,

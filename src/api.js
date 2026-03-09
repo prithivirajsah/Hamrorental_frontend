@@ -80,6 +80,11 @@ const api = {
     return response.data;
   },
 
+  async getSession() {
+    const response = await axiosInstance.get("/auth/session");
+    return response.data;
+  },
+
   async updateProfile(data) {
     const response = await axiosInstance.put("/users/me", data);
     return response.data;
@@ -129,6 +134,22 @@ const api = {
 
   async getMyBookings(params = {}) {
     const response = await axiosInstance.get('/bookings/me', { params });
+    return response.data;
+  },
+
+  async getOwnerBookings(params = {}) {
+    const response = await axiosInstance.get('/bookings/owner/me', { params });
+    return response.data;
+  },
+
+  async getBookingAvailability(postId, startDate, endDate) {
+    const response = await axiosInstance.get('/bookings/availability', {
+      params: {
+        post_id: postId,
+        start_date: startDate,
+        end_date: endDate,
+      },
+    });
     return response.data;
   },
 
@@ -185,6 +206,11 @@ const api = {
   // Home page content endpoint
   async getHomePage() {
     const response = await axiosInstance.get("/home");
+    return response.data;
+  },
+
+  async getAdminDashboard(params = {}) {
+    const response = await axiosInstance.get("/admin/dashboard", { params });
     return response.data;
   },
 };

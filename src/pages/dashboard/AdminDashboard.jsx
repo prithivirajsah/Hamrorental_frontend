@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { adminData } from '@/api/adminDataClient';
+import api from '@/api';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Car, Users, CalendarDays } from 'lucide-react';
@@ -25,32 +25,27 @@ const FEATURE_PRESETS = [
 ];
 
 export default function AdminDashboard() {
-  const { data: vehicles = [] } = useQuery({
-    queryKey: ['vehicles'],
-    queryFn: () => adminData.entities.Vehicle.list('-created_date', 100),
+  const { data: dashboard, isLoading } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: () => api.getAdminDashboard({ recent_limit: 8 }),
   });
 
-  const { data: bookings = [] } = useQuery({
-    queryKey: ['bookings'],
-    queryFn: () => adminData.entities.Booking.list('-created_date', 50),
-  });
+  const statsSource = dashboard?.stats || {};
+  const recentBookings = dashboard?.recent_bookings || [];
+  const bookingBreakdown = dashboard?.booking_status_breakdown || {};
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => adminData.entities.User.list(),
-  });
-
-  const totalRevenue = bookings
-    .filter(b => b.status === 'completed' || b.status === 'confirmed')
-    .reduce((sum, b) => sum + (b.total_price || 0), 0);
-
-  const activeBookings = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
-  const availableVehicles = vehicles.filter(v => v.status === 'available').length;
+  const totalUsers = statsSource.total_users || 0;
+  const totalPosts = statsSource.total_posts || 0;
+  const totalBookings = statsSource.total_bookings || 0;
+  const confirmedBookings = statsSource.confirmed_bookings || 0;
+  const completedBookings = statsSource.completed_bookings || 0;
+  const pendingBookings = statsSource.pending_bookings || 0;
+  const totalRevenue = statsSource.total_revenue || 0;
 
   const stats = [
-    { label: 'Total Vehicles', value: vehicles.length, sub: `${availableVehicles} available`, icon: Car, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Registered Users', value: users.length, sub: 'all time', icon: Users, color: 'bg-purple-50 text-purple-600' },
-    { label: 'Active Bookings', value: activeBookings, sub: `${bookings.length} total`, icon: CalendarDays, color: 'bg-amber-50 text-amber-600' },
+    { label: 'Total Vehicles', value: totalPosts, sub: 'all listings', icon: Car, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Registered Users', value: totalUsers, sub: 'all time', icon: Users, color: 'bg-purple-50 text-purple-600' },
+    { label: 'Confirmed Bookings', value: confirmedBookings, sub: `${totalBookings} total`, icon: CalendarDays, color: 'bg-amber-50 text-amber-600' },
     { label: 'Total Revenue', value: `Rs. ${totalRevenue.toLocaleString()}`, sub: 'confirmed + completed', icon: NepaliRupeeIcon, color: 'bg-green-50 text-green-600' },
   ];
 
@@ -61,8 +56,6 @@ export default function AdminDashboard() {
     completed: 'bg-gray-100 text-gray-700',
     cancelled: 'bg-red-100 text-red-700',
   };
-
-  const recentBookings = bookings.slice(0, 8);
 
   return (
     <div className="p-6 space-y-6">
@@ -104,7 +97,9 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {recentBookings.length === 0 ? (
+                {isLoading ? (
+                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm">Loading dashboard...</td></tr>
+                ) : recentBookings.length === 0 ? (
                   <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm">No bookings yet</td></tr>
                 ) : recentBookings.map(booking => (
                   <tr key={booking.id} className="hover:bg-gray-50/50 transition-colors">
@@ -129,17 +124,18 @@ export default function AdminDashboard() {
         {/* Vehicle Status Summary */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Fleet Status</h2>
+            <h2 className="font-semibold text-gray-900">Booking Status</h2>
             <Link to={createPageUrl('AdminVehicles')} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Manage →</Link>
           </div>
           <div className="space-y-3">
             {[
-              { label: 'Available', status: 'available', color: 'bg-green-500' },
-              { label: 'Unavailable', status: 'unavailable', color: 'bg-red-400' },
-              { label: 'Maintenance', status: 'maintenance', color: 'bg-amber-400' },
+              { label: 'Pending', status: 'pending', color: 'bg-yellow-500' },
+              { label: 'Confirmed', status: 'confirmed', color: 'bg-blue-500' },
+              { label: 'Completed', status: 'completed', color: 'bg-green-500' },
+              { label: 'Cancelled', status: 'cancelled', color: 'bg-red-500' },
             ].map(({ label, status, color }) => {
-              const count = vehicles.filter(v => v.status === status).length;
-              const pct = vehicles.length ? Math.round((count / vehicles.length) * 100) : 0;
+              const count = bookingBreakdown[status] || 0;
+              const pct = totalBookings ? Math.round((count / totalBookings) * 100) : 0;
               return (
                 <div key={status}>
                   <div className="flex justify-between text-sm mb-1">
@@ -155,19 +151,20 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">By Category</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Booking Overview</h3>
             <div className="space-y-2">
-              {['SUV', 'Sedan', 'Luxury', 'Electric'].map(cat => {
-                const count = vehicles.filter(v => v.category === cat).length;
-                if (!count) return null;
-                return (
-                  <div key={cat} className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">{cat}</span>
-                    <span className="text-sm font-medium text-gray-800 bg-gray-50 px-2 py-0.5 rounded">{count}</span>
-                  </div>
-                );
-              })}
-              {vehicles.length === 0 && <p className="text-sm text-gray-400">No vehicles added yet</p>}
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Pending</span>
+                <span className="text-sm font-medium text-gray-800 bg-gray-50 px-2 py-0.5 rounded">{pendingBookings}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Confirmed</span>
+                <span className="text-sm font-medium text-gray-800 bg-gray-50 px-2 py-0.5 rounded">{confirmedBookings}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Completed</span>
+                <span className="text-sm font-medium text-gray-800 bg-gray-50 px-2 py-0.5 rounded">{completedBookings}</span>
+              </div>
             </div>
           </div>
 

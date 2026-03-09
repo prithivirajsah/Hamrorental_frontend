@@ -11,6 +11,12 @@ import Vehicles from './pages/Vehicles/Vehicles';
 import HireaDriver from './pages/hire/HireaDriver';
 import FAQs from './pages/FAQs';
 import Contact from './pages/Contact';
+import About from './pages/About';
+import Services from './pages/Services';
+import OurFleet from './pages/OurFleet';
+import CustomerCare from './pages/CustomerCare';
+import SelfDrive from './pages/SelfDrive';
+import WithDriver from './pages/WithDriver';
 
 // User Protected Pages
 import Profile from './pages/Profile';
@@ -45,6 +51,12 @@ function App() {
           <Route path="/hire-a-driver" element={<HireaDriver />} />
           <Route path="/faqs" element={<FAQs />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/our-fleet" element={<OurFleet />} />
+          <Route path="/customer-care" element={<CustomerCare />} />
+          <Route path="/self-drive" element={<SelfDrive />} />
+          <Route path="/with-driver" element={<WithDriver />} />
 
 
           {/* --- USER PROTECTED ROUTES --- */}
