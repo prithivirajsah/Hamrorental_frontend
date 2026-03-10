@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Car, IndianRupee, MapPin, Plus, Upload, UserRound, X, Loader2 } from 'lucide-react';
 import api from '@/api';
+import config from '@/config/config';
 import { toast } from 'react-toastify';
 
 const initialForm = {
@@ -129,9 +130,22 @@ export default function UserAddPost({ asModal = false, onClose }) {
       if (asModal && onClose) onClose();
     } catch (error) {
       const backendError = error?.response?.data?.detail;
-      const message = Array.isArray(backendError)
+      let message = Array.isArray(backendError)
         ? backendError.map((item) => item.msg || item).join(', ')
-        : backendError || 'Failed to submit post. Please try again.';
+        : backendError;
+
+      if (!message && error?.response?.status === 401) {
+        message = 'Please login again before publishing your post.';
+      }
+
+      if (!message && !error?.response) {
+        message = `Cannot connect to API (${config.API_BASE_URL}). Please check backend server.`;
+      }
+
+      if (!message) {
+        message = 'Failed to submit post. Please try again.';
+      }
+
       toast.error(message);
     } finally {
       setIsSubmitting(false);

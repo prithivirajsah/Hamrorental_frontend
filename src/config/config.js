@@ -1,13 +1,13 @@
 const isProd = import.meta.env.PROD;
 const isDev = import.meta.env.DEV;
+const apiBaseFromEnv = import.meta.env.VITE_API_BASE_URL;
 
 // Environment configuration
 export const config = {
   // Backend API URLs
-  API_BASE_URL: isProd
+  API_BASE_URL: apiBaseFromEnv || (isProd
     ? "https://hamrocarrental-backend.vercel.app"
-    : "http://127.0.0.1:8000",
-    // Use local mock server for development
+    : "http://127.0.0.1:8000"),
   
   // Frontend URLs
   FRONTEND_URL: isProd

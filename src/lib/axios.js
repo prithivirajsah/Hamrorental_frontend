@@ -4,30 +4,39 @@ import config from "../config/config.js";
 const axiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
   timeout: config.REQUEST_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Auto-add token to every request
 axiosInstance.interceptors.request.use(
-  (config) => {
+  (requestConfig) => {
+    requestConfig.headers = requestConfig.headers || {};
+
+    // Let the browser set multipart boundaries automatically for FormData.
+    if (requestConfig.data instanceof FormData) {
+      if (requestConfig.headers) {
+        delete requestConfig.headers['Content-Type'];
+        delete requestConfig.headers['content-type'];
+      }
+    } else if (requestConfig.headers && !requestConfig.headers['Content-Type']) {
+      requestConfig.headers['Content-Type'] = 'application/json';
+    }
+
     const token = localStorage.getItem("token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      requestConfig.headers.Authorization = `Bearer ${token}`;
     }
     
     // Log request details in development
     if (import.meta.env.DEV) {
       console.log('API Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.baseURL + config.url,
-        headers: config.headers,
-        data: config.data,
+        method: requestConfig.method?.toUpperCase(),
+        url: requestConfig.baseURL + requestConfig.url,
+        headers: requestConfig.headers,
+        data: requestConfig.data,
       });
     }
     
-    return config;
+    return requestConfig;
   },
   (error) => {
     return Promise.reject(error);

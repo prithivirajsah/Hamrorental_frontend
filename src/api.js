@@ -98,11 +98,7 @@ const api = {
 
   // Post endpoints
   async createPost(formData) {
-    const response = await axiosInstance.post("/posts", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axiosInstance.post("/posts", formData);
     return response.data;
   },
 
