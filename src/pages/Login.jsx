@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
 import bgImage from '../assets/bg.png';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
-import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -189,7 +188,7 @@ export default function Login() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                console.log('Reset password for:', resetEmail);
+                toast.info(`Reset password link sent to ${resetEmail}`);
                 setShowResetModal(false);
                 setResetEmail('');
               }}
@@ -222,19 +221,6 @@ export default function Login() {
         </div>
       )}
 
-      {/* Toast Notifications */}
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
     </div>
   );
 }

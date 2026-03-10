@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, Check, X, AlertCircle } from 'lucide-react';
 import bgImage from '../assets/bg.png';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
-import 'react-toastify/dist/ReactToastify.css';
 
 const calculatePasswordStrength = (password) => {
   let strength = 0;
@@ -468,19 +467,6 @@ export default function Register() {
       {/* Decorative gradient overlay */}
       <div className="hidden lg:block absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-transparent via-transparent to-black/20 pointer-events-none"></div>
       
-      {/* Toast Notifications */}
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
     </div>
   );
 }

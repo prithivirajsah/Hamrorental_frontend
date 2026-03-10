@@ -4,6 +4,10 @@ import { Gauge, Users, Wind, ArrowLeft } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import api from '../../api';
+import { RatingDisplay, RatingInput } from '../../components/ui/rating';
+import { addReview } from '../../utils/reviewStorage';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const fallbackImage =
   'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=450&fit=crop&auto=format';
@@ -11,12 +15,13 @@ const fallbackImage =
 export default function CarDetails() {
   const { id } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
   const [vehicleFromApi, setVehicleFromApi] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingMessage, setBookingMessage] = useState('');
-  const [bookingError, setBookingError] = useState('');
+  const [userRating, setUserRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
   const [bookingForm, setBookingForm] = useState({
     pickup_location: '',
     return_location: '',
@@ -24,6 +29,25 @@ export default function CarDetails() {
     end_date: '',
     note: '',
   });
+
+  const handleSubmitReview = () => {
+    if (!userRating) {
+      toast.error('Please select a rating before submitting.');
+      return;
+    }
+
+    addReview({
+      name: user?.full_name || user?.name || 'Guest User',
+      role: 'Verified Renter',
+      content: reviewText || `Rated ${userRating} stars for ${car?.name || 'this vehicle'}.`,
+      rating: userRating,
+      vehicleName: car?.name || '',
+    });
+
+    toast.success('Thanks for your feedback!');
+    setUserRating(0);
+    setReviewText('');
+  };
 
   const stateCar = location.state?.car || null;
 
@@ -72,17 +96,17 @@ export default function CarDetails() {
     }
     return vehicleFromApi;
   }, [stateCar, vehicleFromApi]);
+  
+  const ratingValue = Number(car?.rating) || 4.7;
+  const ratingCount = Number(car?.ratingCount) || 128;
 
   const onBookingFieldChange = (field, value) => {
     setBookingForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleBookNow = async () => {
-    setBookingError('');
-    setBookingMessage('');
-
     if (!bookingForm.pickup_location || !bookingForm.return_location || !bookingForm.start_date || !bookingForm.end_date) {
-      setBookingError('Please fill all required booking fields.');
+      toast.error('Please fill all required booking fields.');
       return;
     }
 
@@ -97,7 +121,7 @@ export default function CarDetails() {
         note: bookingForm.note || undefined,
       });
 
-      setBookingMessage(response?.message || 'Booking created successfully.');
+      toast.success(response?.message || 'Booking created successfully.');
       setBookingForm({
         pickup_location: '',
         return_location: '',
@@ -109,9 +133,9 @@ export default function CarDetails() {
     } catch (error) {
       const detail = error?.response?.data?.detail;
       if (Array.isArray(detail)) {
-        setBookingError(detail.map((item) => item.msg || String(item)).join(', '));
+        toast.error(detail.map((item) => item.msg || String(item)).join(', '));
       } else {
-        setBookingError(detail || 'Failed to create booking. Please login and try again.');
+        toast.error(detail || 'Failed to create booking. Please login and try again.');
       }
     } finally {
       setBookingLoading(false);
@@ -147,6 +171,14 @@ export default function CarDetails() {
                 <p className="text-sm text-indigo-600 font-semibold mb-2">{car.category}</p>
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">{car.name}</h1>
                 <p className="text-2xl font-bold text-indigo-600 mb-6">{car.price} <span className="text-sm text-gray-500 font-normal">per day</span></p>
+
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Guest Rating</p>
+                    <RatingDisplay value={ratingValue} showValue valueClassName="font-semibold text-amber-800" />
+                  </div>
+                  <p className="text-sm text-amber-800 font-medium">Based on {ratingCount}+ reviews</p>
+                </div>
 
                 {car.location ? (
                   <p className="text-sm text-gray-500 mb-4">Location: {car.location}</p>
@@ -186,13 +218,6 @@ export default function CarDetails() {
                 >
                   {showBookingForm ? 'Hide Booking Form' : 'Book Now'}
                 </button>
-
-                {bookingMessage ? (
-                  <p className="text-sm text-green-700 mt-4">{bookingMessage}</p>
-                ) : null}
-                {bookingError ? (
-                  <p className="text-sm text-red-600 mt-4">{bookingError}</p>
-                ) : null}
 
                 {showBookingForm ? (
                   <div className="mt-6 border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -252,6 +277,33 @@ export default function CarDetails() {
                     </div>
                   </div>
                 ) : null}
+
+                <div className="mt-8 border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
+                  <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
+
+                  <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
+
+                  <textarea
+                    value={reviewText}
+                    onChange={(event) => {
+                      setReviewText(event.target.value);
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
+                    placeholder="Write a short review (optional)"
+                  />
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSubmitReview}
+                      disabled={!userRating}
+                      className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      Submit Rating
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

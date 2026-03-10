@@ -7,7 +7,7 @@ import { AiOutlineCheckCircle } from "react-icons/ai";
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
 import { handleApiError, handleApiSuccess } from '../utils/apiUtils';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -608,20 +608,6 @@ export default function Profile() {
         </div>
       </main>
       <Footer />
-      
-      {/* Toast Container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
     </div>
   );
 }

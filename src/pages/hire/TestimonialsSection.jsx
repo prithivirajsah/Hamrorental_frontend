@@ -1,8 +1,10 @@
-import React from 'react';
-import { Star } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { RatingDisplay } from '../../components/ui/rating';
+import { getStoredReviews, reviewStorageEvents } from '../../utils/reviewStorage';
 
-const testimonials = [
+const defaultTestimonials = [
   {
+    id: 'default-1',
     name: 'Prithivi',
     role: 'Business Executive',
     image: '',
@@ -10,6 +12,7 @@ const testimonials = [
     rating: 5
   },
   {
+    id: 'default-2',
     name: 'Prithivi',
     role: 'Frequent Traveler',
     image: '',
@@ -17,6 +20,7 @@ const testimonials = [
     rating: 5
   },
   {
+    id: 'default-3',
     name: 'Prithivi',
     role: 'Tourist',
     image: '',
@@ -26,6 +30,35 @@ const testimonials = [
 ];
 
 export default function TestimonialsSection() {
+  const [storedReviews, setStoredReviews] = useState([]);
+
+  useEffect(() => {
+    const loadReviews = () => {
+      const reviews = getStoredReviews()
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 6);
+      setStoredReviews(reviews);
+    };
+
+    loadReviews();
+    window.addEventListener('storage', loadReviews);
+    window.addEventListener(reviewStorageEvents.REVIEWS_UPDATED_EVENT, loadReviews);
+
+    return () => {
+      window.removeEventListener('storage', loadReviews);
+      window.removeEventListener(reviewStorageEvents.REVIEWS_UPDATED_EVENT, loadReviews);
+    };
+  }, []);
+
+  const testimonials = useMemo(() => {
+    const formattedStored = storedReviews.map((review) => ({
+      ...review,
+      content: review.vehicleName ? `${review.content} (${review.vehicleName})` : review.content,
+    }));
+
+    return [...formattedStored, ...defaultTestimonials].slice(0, 6);
+  }, [storedReviews]);
+
   return (
     <section className="py-15 bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,17 +73,18 @@ export default function TestimonialsSection() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((testimonial) => (
+          {testimonials.map((testimonial, index) => (
             <div
-              key={testimonial.name}
+              key={testimonial.id || `${testimonial.name}-${index}`}
               className="relative bg-white rounded-3xl p-8 shadow-lg border border-slate-100"
             >
 
-              <div className="flex gap-1 mb-6">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-[#b4aeee] text-[#b4aeee]" />
-                ))}
-              </div>
+              <RatingDisplay
+                value={testimonial.rating}
+                className="mb-6"
+                valueClassName="text-slate-600"
+                showValue
+              />
 
               <p className="text-slate-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
 

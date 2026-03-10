@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FaClock, FaEnvelope, FaLocationDot, FaPhone } from 'react-icons/fa6';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
@@ -245,19 +244,6 @@ export default function Contact() {
           </div>
         </section>
       </main>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
 
       <Footer />
     </div>

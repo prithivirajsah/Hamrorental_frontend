@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Car, IndianRupee, MapPin, Plus, Upload, UserRound, X, Loader2 } from 'lucide-react';
 import api from '@/api';
+import { toast } from 'react-toastify';
 
 const initialForm = {
   title: '',
@@ -117,7 +118,7 @@ export default function UserAddPost({ asModal = false, onClose }) {
       });
 
       await api.createPost(payload);
-      window.alert('Post submitted successfully.');
+      toast.success('Post submitted successfully.');
       form.images.forEach((image) => {
         if (image.startsWith('blob:')) {
           URL.revokeObjectURL(image);
@@ -131,7 +132,7 @@ export default function UserAddPost({ asModal = false, onClose }) {
       const message = Array.isArray(backendError)
         ? backendError.map((item) => item.msg || item).join(', ')
         : backendError || 'Failed to submit post. Please try again.';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

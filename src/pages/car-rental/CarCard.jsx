@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Gauge, Users, Wind, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isInWishlist, toggleWishlist } from '../../utils/wishlistStorage';
+import { RatingDisplay } from '../../components/ui/rating';
 
 export default function CarCard({ car }) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const featureOne = car.features?.[0] || car.fuel || 'PB 95';
   const featureTwo = car.features?.[1] || 'Air Conditioner';
+  const ratingValue = Number(car.rating) || 4.6;
+  const ratingCount = Number(car.ratingCount) || 32;
 
   useEffect(() => {
     setLiked(isInWishlist(car.id));
@@ -53,6 +56,11 @@ export default function CarCard({ car }) {
             <span className="text-lg font-bold text-indigo-600">{car.price}</span>
             <span className="text-xs text-gray-400 block">per day</span>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <RatingDisplay value={ratingValue} size="sm" showValue valueClassName="font-medium" />
+          <span className="text-xs text-gray-500">{ratingCount}+ reviews</span>
         </div>
 
         {/* Features */}
