@@ -5,13 +5,13 @@ const isDev = import.meta.env.DEV;
 export const config = {
   // Backend API URLs
   API_BASE_URL: isProd
-    ? "https://hamrorental-backend.onrender.com"
-    : "http://127.0.0.1:8000", 
+    ? "https://hamrocarrental-backend.vercel.app"
+    : "http://127.0.0.1:8000",
     // Use local mock server for development
   
   // Frontend URLs
   FRONTEND_URL: isProd
-    ? "https://hamrocarrental.netlify.app"
+    ? "https://hamrorental-frontend.vercel.app"
     : "http://localhost:5173",
    
   // App settings
