@@ -24,6 +24,8 @@ import WithDriver from './pages/WithDriver';
 import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import UserAddPost from './pages/UserAddPost';
+import Orders from './pages/Orders';
+import Reviews from './pages/Reviews';
 
 import Layout from './Layout';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
@@ -76,6 +78,42 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["user"]}>
                 <Wishlist />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/user/orders"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <Reviews />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/user/reviews"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <Reviews />
               </ProtectedRoute>
             }
           />

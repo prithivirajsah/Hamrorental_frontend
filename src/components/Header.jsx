@@ -182,16 +182,16 @@ export default function Header() {
                         </Link>
 
                         <Link 
-                          to="/Orders" 
+                          to="/user/orders" 
                           className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setShowProfilePopup(false)}
                         >
                           <IoReorderThreeSharp  className="w-5 h-5" />
-                          <span>My Order</span>
+                          <span>My Orders</span>
                         </Link>
 
                         <Link 
-                          to="/Reviews" 
+                          to="/user/reviews" 
                           className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setShowProfilePopup(false)}
                         >

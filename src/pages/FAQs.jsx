@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { ChevronDown, ChevronUp } from 'lucide-react'
@@ -92,9 +93,12 @@ export default function FAQs() {
             <p className="text-gray-600 mb-4">
               Can't find the answer you're looking for? Our customer support team is here to help.
             </p>
-            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+            <Link
+              to="/contact"
+              className="inline-flex bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+            >
               Contact Support
-            </button>
+            </Link>
           </div>
         </div>
       </main>

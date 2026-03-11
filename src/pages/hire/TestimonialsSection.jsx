@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Heart } from 'lucide-react';
 import { RatingDisplay } from '../../components/ui/rating';
-import { getStoredReviews, reviewStorageEvents } from '../../utils/reviewStorage';
+import { getStoredReviews, isReviewLiked, reviewStorageEvents, toggleReviewLike } from '../../utils/reviewStorage';
 
 const defaultTestimonials = [
   {
@@ -59,6 +60,10 @@ export default function TestimonialsSection() {
     return [...formattedStored, ...defaultTestimonials].slice(0, 6);
   }, [storedReviews]);
 
+  const handleToggleLike = (reviewId) => {
+    toggleReviewLike(reviewId);
+  };
+
   return (
     <section className="py-15 bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,7 +77,7 @@ export default function TestimonialsSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {testimonials.map((testimonial, index) => (
             <div
               key={testimonial.id || `${testimonial.name}-${index}`}
@@ -87,6 +92,21 @@ export default function TestimonialsSection() {
               />
 
               <p className="text-slate-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
+
+              {testimonial.createdAt ? (
+                <button
+                  type="button"
+                  onClick={() => handleToggleLike(testimonial.id)}
+                  className={`mb-4 inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isReviewLiked(testimonial.id)
+                      ? 'border-pink-200 bg-pink-50 text-pink-600'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${isReviewLiked(testimonial.id) ? 'fill-pink-500 text-pink-500' : ''}`} />
+                  {isReviewLiked(testimonial.id) ? 'Liked' : 'Like'} ({Number(testimonial.likes) || 0})
+                </button>
+              ) : null}
 
               <div>
                 <h4 className="font-semibold text-slate-900">{testimonial.name}</h4>
