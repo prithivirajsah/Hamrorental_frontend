@@ -117,6 +117,37 @@ const api = {
     return response.data;
   },
 
+  // Review endpoints
+  async createReview(data) {
+    const response = await axiosInstance.post('/reviews', data);
+    return response.data;
+  },
+
+  async getReviews(params = {}) {
+    const response = await axiosInstance.get('/reviews', { params });
+    return response.data;
+  },
+
+  async getMyReviews(params = {}) {
+    const response = await axiosInstance.get('/reviews/me', { params });
+    return response.data;
+  },
+
+  async updateReview(reviewId, data) {
+    const response = await axiosInstance.patch(`/reviews/${reviewId}`, data);
+    return response.data;
+  },
+
+  async updateReviewLikes(reviewId, delta) {
+    const response = await axiosInstance.patch(`/reviews/${reviewId}/likes`, { delta });
+    return response.data;
+  },
+
+  async deleteReview(reviewId) {
+    const response = await axiosInstance.delete(`/reviews/${reviewId}`);
+    return response.data;
+  },
+
   // Booking endpoints
   async createBooking(data) {
     const response = await axiosInstance.post('/bookings', data);

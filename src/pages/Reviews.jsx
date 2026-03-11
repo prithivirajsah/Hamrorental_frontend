@@ -4,15 +4,40 @@ import { Check, Heart, MessageSquareText, Pencil, Trash2, X } from 'lucide-react
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { RatingDisplay, RatingInput } from '../components/ui/rating';
-import {
-  deleteStoredReview,
-  getStoredReviews,
-  isReviewLiked,
-  reviewStorageEvents,
-  toggleReviewLike,
-  updateStoredReview,
-} from '../utils/reviewStorage';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../api';
+import { toast } from 'react-toastify';
+
+const REVIEW_LIKED_KEY = 'customer_review_liked_map';
+
+const readLikedMap = () => {
+  try {
+    const raw = localStorage.getItem(REVIEW_LIKED_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeLikedMap = (map) => {
+  localStorage.setItem(REVIEW_LIKED_KEY, JSON.stringify(map));
+};
+
+const isReviewLiked = (reviewId) => {
+  if (!reviewId) return false;
+  const likedMap = readLikedMap();
+  return Boolean(likedMap[reviewId]);
+};
+
+const setReviewLiked = (reviewId, liked) => {
+  const likedMap = readLikedMap();
+  if (liked) {
+    likedMap[reviewId] = true;
+  } else {
+    delete likedMap[reviewId];
+  }
+  writeLikedMap(likedMap);
+};
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -24,33 +49,43 @@ const formatDate = (value) => {
 };
 
 export default function Reviews() {
-  const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [draftRating, setDraftRating] = useState(0);
   const [draftContent, setDraftContent] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadReviews = () => {
-      setReviews(getStoredReviews());
+    let isMounted = true;
+
+    const loadReviews = async () => {
+      setLoading(true);
+      try {
+        const data = await api.getMyReviews({ limit: 100 });
+        if (isMounted) {
+          setReviews(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Failed to load reviews:', error);
+        if (isMounted) {
+          setReviews([]);
+          toast.error('Unable to fetch your reviews.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     };
 
     loadReviews();
-    window.addEventListener('storage', loadReviews);
-    window.addEventListener(reviewStorageEvents.REVIEWS_UPDATED_EVENT, loadReviews);
 
     return () => {
-      window.removeEventListener('storage', loadReviews);
-      window.removeEventListener(reviewStorageEvents.REVIEWS_UPDATED_EVENT, loadReviews);
+      isMounted = false;
     };
   }, []);
 
-  const userName = (user?.full_name || user?.name || '').trim().toLowerCase();
-
-  const myReviews = useMemo(() => {
-    if (!userName) return reviews;
-    return reviews.filter((review) => (review.name || '').trim().toLowerCase() === userName);
-  }, [reviews, userName]);
+  const myReviews = useMemo(() => reviews, [reviews]);
 
   const averageRating = useMemo(() => {
     if (!myReviews.length) return 0;
@@ -70,27 +105,52 @@ export default function Reviews() {
     setDraftContent('');
   };
 
-  const handleSaveEdit = (reviewId) => {
+  const handleSaveEdit = async (reviewId) => {
     const content = draftContent.trim();
     if (!draftRating || !content) return;
 
-    updateStoredReview(reviewId, {
-      rating: draftRating,
-      content,
-    });
+    try {
+      const updated = await api.updateReview(reviewId, {
+        rating: draftRating,
+        content,
+      });
 
-    handleCancelEdit();
-  };
-
-  const handleDeleteReview = (reviewId) => {
-    deleteStoredReview(reviewId);
-    if (editingId === reviewId) {
+      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)));
       handleCancelEdit();
+      toast.success('Review updated.');
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to update review.');
     }
   };
 
-  const handleToggleLike = (reviewId) => {
-    toggleReviewLike(reviewId);
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await api.deleteReview(reviewId);
+      setReviews((prev) => prev.filter((review) => review.id !== reviewId));
+      if (editingId === reviewId) {
+        handleCancelEdit();
+      }
+      toast.success('Review deleted.');
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to delete review.');
+    }
+  };
+
+  const handleToggleLike = async (reviewId) => {
+    const currentlyLiked = isReviewLiked(reviewId);
+    const nextLiked = !currentlyLiked;
+    const delta = nextLiked ? 1 : -1;
+
+    try {
+      const updated = await api.updateReviewLikes(reviewId, delta);
+      setReviewLiked(reviewId, nextLiked);
+      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)));
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to update like status.');
+    }
   };
 
   return (
@@ -124,12 +184,14 @@ export default function Reviews() {
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-sm text-gray-500">Latest Review</p>
-            <p className="text-base font-semibold mt-1">{myReviews[0] ? formatDate(myReviews[0].createdAt) : '—'}</p>
+            <p className="text-base font-semibold mt-1">{myReviews[0] ? formatDate(myReviews[0].created_at || myReviews[0].createdAt) : '—'}</p>
           </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6">
-          {myReviews.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading your reviews...</div>
+          ) : myReviews.length === 0 ? (
             <div className="text-center py-12">
               <MessageSquareText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <h2 className="text-xl font-semibold text-gray-700">No reviews yet</h2>
@@ -147,7 +209,7 @@ export default function Reviews() {
                 <article key={review.id} className="border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-sm transition-shadow">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
                     <div>
-                      <h3 className="text-base font-semibold text-gray-900">{review.vehicleName || 'Vehicle Review'}</h3>
+                      <h3 className="text-base font-semibold text-gray-900">{review.vehicle_name || review.vehicleName || 'Vehicle Review'}</h3>
                       <p className="text-sm text-gray-500">{review.role || 'Customer'}</p>
                     </div>
                     <div className="text-left sm:text-right">
@@ -156,7 +218,7 @@ export default function Reviews() {
                       ) : (
                         <RatingDisplay value={review.rating} showValue size="sm" valueClassName="font-medium" />
                       )}
-                      <p className="text-xs text-gray-500 mt-1">{formatDate(review.createdAt)}</p>
+                      <p className="text-xs text-gray-500 mt-1">{formatDate(review.created_at || review.createdAt)}</p>
                     </div>
                   </div>
 

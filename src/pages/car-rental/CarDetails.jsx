@@ -5,7 +5,6 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import api from '../../api';
 import { RatingDisplay, RatingInput } from '../../components/ui/rating';
-import { addReview } from '../../utils/reviewStorage';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -30,23 +29,31 @@ export default function CarDetails() {
     note: '',
   });
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!userRating) {
       toast.error('Please select a rating before submitting.');
       return;
     }
 
-    addReview({
-      name: user?.full_name || user?.name || 'Guest User',
-      role: 'Verified Renter',
-      content: reviewText || `Rated ${userRating} stars for ${car?.name || 'this vehicle'}.`,
-      rating: userRating,
-      vehicleName: car?.name || '',
-    });
+    if (!user?.id) {
+      toast.error('Please login to submit a review.');
+      return;
+    }
 
-    toast.success('Thanks for your feedback!');
-    setUserRating(0);
-    setReviewText('');
+    try {
+      await api.createReview({
+        post_id: Number(id),
+        rating: userRating,
+        content: reviewText || `Rated ${userRating} stars for ${car?.name || 'this vehicle'}.`,
+      });
+
+      toast.success('Thanks for your feedback!');
+      setUserRating(0);
+      setReviewText('');
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to submit review right now.');
+    }
   };
 
   const stateCar = location.state?.car || null;
