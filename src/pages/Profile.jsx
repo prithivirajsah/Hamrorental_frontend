@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { User, FileText, Shield, Edit, Lock, Camera, CheckCircle, XCircle, Clock, Calendar, MapPin, Mail, Phone, Key, Activity, LogIn, Globe, Smartphone } from 'lucide-react';
+import { User, FileText, Shield, Edit, Lock, Camera, CheckCircle, XCircle, Clock, Calendar, MapPin, Mail, Phone, Key, Activity, LogIn, Globe, Smartphone, Trash2, Plus, Loader2 } from 'lucide-react';
 import CloseIcon from '@mui/icons-material/Close';
 import { AiOutlineCheckCircle } from "react-icons/ai";
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
 import { handleApiError, handleApiSuccess } from '../utils/apiUtils';
 import { toast } from 'react-toastify';
+import { adminData } from '../api/adminDataClient';
+import UserAddPost from './UserAddPost';
+import { config } from '../config/config';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('details');
   const [kycStatus, setKycStatus] = useState('pending');
   const [profileImage, setProfileImage] = useState(null);
@@ -30,6 +33,62 @@ export default function Profile() {
     confirm_password: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [kycDocuments, setKycDocuments] = useState({
+    document_type: 'National ID',
+    document_number: '',
+    front_file: null,
+    back_file: null,
+  });
+  const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+
+  // Posts state
+  const [myPosts, setMyPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [isAddPostOpen, setIsAddPostOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
+
+  const buildFormDataFromUser = (currentUser) => ({
+    full_name: currentUser?.full_name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
+    location: currentUser?.location || '',
+    country: currentUser?.country || 'Nepal',
+    date_of_birth: currentUser?.date_of_birth || ''
+  });
+
+  const loadMyPosts = useCallback(async () => {
+    setPostsLoading(true);
+    try {
+      const posts = await api.getMyPosts();
+      setMyPosts(posts);
+    } catch (error) {
+      toast.error('Failed to load your posts');
+    } finally {
+      setPostsLoading(false);
+    }
+  }, []);
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    setDeletingPostId(postId);
+    try {
+      await api.deletePost(postId);
+      toast.success('Post deleted successfully');
+      setMyPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (error) {
+      handleApiError(error, 'Failed to delete post');
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${config.API_BASE_URL}${url}`;
+  };
 
   // Mock login activity data (in real app, this would come from backend)
   const [loginActivity] = useState([
@@ -46,16 +105,42 @@ export default function Profile() {
   // Initialize form data with user information
   useEffect(() => {
     if (user) {
-      setFormData({
-        full_name: user.full_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        location: user.location || '',
-        country: user.country || 'Nepal',
-        date_of_birth: user.date_of_birth || ''
-      });
+      setFormData(buildFormDataFromUser(user));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'posts') {
+      loadMyPosts();
+    }
+  }, [activeTab, loadMyPosts]);
+
+  useEffect(() => {
+    const loadKycStatus = async () => {
+      if (!user?.email) return;
+      try {
+        const docs = await adminData.entities.Document.filter({ user_email: user.email });
+        if (!docs.length) {
+          setKycStatus('pending');
+          return;
+        }
+        const latestDoc = docs
+          .slice()
+          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        if (latestDoc?.verification_status === 'approved') {
+          setKycStatus('verified');
+        } else if (latestDoc?.verification_status === 'rejected') {
+          setKycStatus('rejected');
+        } else {
+          setKycStatus('pending');
+        }
+      } catch (error) {
+        setKycStatus('pending');
+      }
+    };
+
+    loadKycStatus();
+  }, [user?.email]);
 
   const tabs = [
     { id: 'details', name: 'My Details', icon: User },
@@ -97,12 +182,23 @@ export default function Profile() {
       return;
     }
 
+    if (!formData.full_name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
     setIsUpdating(true);
     try {
-      const response = await api.updateProfile(formData);
+      await api.updateProfile({
+        full_name: formData.full_name,
+        phone: formData.phone || null,
+        location: formData.location || null,
+        country: formData.country || null,
+        date_of_birth: formData.date_of_birth || null,
+      });
+      await refreshUser();
       handleApiSuccess('Profile updated successfully!');
       setIsEditing(false);
-      // In real app, you'd update the user context here
     } catch (error) {
       handleApiError(error, 'Failed to update profile');
     } finally {
@@ -135,6 +231,62 @@ export default function Profile() {
       handleApiError(error, 'Failed to update password');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleKycFieldChange = (field, value) => {
+    setKycDocuments((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleKycSubmit = async () => {
+    if (!user?.email) {
+      toast.error('Please log in to submit documents');
+      return;
+    }
+
+    if (!kycDocuments.document_number.trim()) {
+      toast.error('Document number is required');
+      return;
+    }
+
+    if (!kycDocuments.front_file || !kycDocuments.back_file) {
+      toast.error('Please upload front and back documents');
+      return;
+    }
+
+    setIsSubmittingKyc(true);
+    try {
+      const [frontUpload, backUpload] = await Promise.all([
+        adminData.integrations.Core.UploadFile({ file: kycDocuments.front_file }),
+        adminData.integrations.Core.UploadFile({ file: kycDocuments.back_file }),
+      ]);
+
+      await adminData.entities.Document.create({
+        user_name: user?.full_name || 'Unknown User',
+        user_email: user.email,
+        document_type: kycDocuments.document_type,
+        document_number: kycDocuments.document_number.trim(),
+        verification_status: 'pending',
+        front_image: frontUpload.file_url,
+        back_image: backUpload.file_url,
+      });
+
+      setKycStatus('pending');
+      setKycDocuments({
+        document_type: 'National ID',
+        document_number: '',
+        front_file: null,
+        back_file: null,
+      });
+      setIsKycModalOpen(false);
+      handleApiSuccess('Documents submitted successfully. Verification is pending.');
+    } catch (error) {
+      handleApiError(error, 'Failed to submit KYC documents');
+    } finally {
+      setIsSubmittingKyc(false);
     }
   };
 
@@ -337,6 +489,14 @@ export default function Profile() {
                 <div>
                   <label className="block text-sm font-medium mb-2">KYC Status</label>
                   {renderKycStatus()}
+                  <button
+                    type="button"
+                    onClick={() => setIsKycModalOpen(true)}
+                    className="mt-4 inline-flex items-center gap-2 bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-4 py-2 rounded-md font-medium transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Upload KYC Documents
+                  </button>
                 </div>
 
                 <div>
@@ -359,7 +519,10 @@ export default function Profile() {
                 </button>
                 {isEditing && (
                   <button 
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => {
+                      setFormData(buildFormDataFromUser(user));
+                      setIsEditing(false);
+                    }}
                     className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
                   >
                     Cancel
@@ -538,30 +701,68 @@ export default function Profile() {
                 <FileText className="w-5 h-5" />
                 My Posts
               </h3>
-              <div className="space-y-4">
-                {[1, 2].map((post) => (
-                  <div key={post} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold">Toyota Camry 2023 - Available for Rent</h4>
-                      <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">Active</span>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-3">
-                      Well-maintained sedan perfect for city drives and long trips. Available for daily, weekly, and monthly rentals.
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[#695ED9] font-semibold">Rs. 8,000/day</span>
-                      <div className="flex gap-2">
-                        <button className="text-blue-600 hover:text-blue-700 text-sm">Edit</button>
-                        <button className="text-red-600 hover:text-red-700 text-sm">Delete</button>
+
+              {postsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#695ED9]" />
+                </div>
+              ) : myPosts.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium">No posts yet</p>
+                  <p className="text-sm mt-1">Create your first vehicle listing to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myPosts.map((post) => (
+                    <div key={post.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex gap-3">
+                        {post.image_urls && post.image_urls.length > 0 && (
+                          <img
+                            src={getImageUrl(post.image_urls[0])}
+                            alt={post.post_title}
+                            className="w-20 h-16 rounded-lg object-cover flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-semibold truncate pr-2">{post.post_title}</h4>
+                            <span className="text-sm text-green-600 bg-green-100 px-2 py-0.5 rounded flex-shrink-0">Active</span>
+                          </div>
+                          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{post.description}</p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[#695ED9] font-semibold text-sm">Rs. {post.price_per_day.toLocaleString()}/day</span>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => { setEditingPost(post); setIsAddPostOpen(true); }}
+                                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                disabled={deletingPostId === post.id}
+                                className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 flex items-center gap-1"
+                              >
+                                {deletingPostId === post.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-6">
-                <button className="bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-6 py-2 rounded-md font-medium transition-colors">
-                  + Add New Post
+                <button
+                  onClick={() => { setEditingPost(null); setIsAddPostOpen(true); }}
+                  className="bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Post
                 </button>
               </div>
             </div>
@@ -607,6 +808,92 @@ export default function Profile() {
           {renderTabContent()}
         </div>
       </main>
+
+      {isKycModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-2xl font-bold text-gray-900">KYC Document Upload</h3>
+              <button
+                type="button"
+                onClick={() => setIsKycModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100"
+              >
+                <CloseIcon style={{ fontSize: '18px', color: '#374151' }} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Document Type</label>
+                <select
+                  value={kycDocuments.document_type}
+                  onChange={(e) => handleKycFieldChange('document_type', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                >
+                  <option value="National ID">National ID</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="Passport">Passport</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Document Number</label>
+                <input
+                  type="text"
+                  value={kycDocuments.document_number}
+                  onChange={(e) => handleKycFieldChange('document_number', e.target.value)}
+                  placeholder="Enter document number"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Front Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleKycFieldChange('front_file', e.target.files?.[0] || null)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Back Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleKycFieldChange('back_file', e.target.files?.[0] || null)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleKycSubmit}
+                  disabled={isSubmittingKyc}
+                  className="bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-8 py-3 rounded-xl font-medium transition-colors disabled:opacity-50"
+                >
+                  {isSubmittingKyc ? 'Submitting Documents...' : 'Submit Documents'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {isAddPostOpen && (
+        <UserAddPost
+          asModal={true}
+          initialPost={editingPost}
+          onClose={() => { setIsAddPostOpen(false); setEditingPost(null); }}
+          onSuccess={() => {
+            setIsAddPostOpen(false);
+            setEditingPost(null);
+            loadMyPosts();
+          }}
+        />
+      )}
       <Footer />
     </div>
   );

@@ -117,6 +117,16 @@ const api = {
     return response.data;
   },
 
+  async updatePost(postId, formData) {
+    const response = await axiosInstance.put(`/posts/${postId}`, formData);
+    return response.data;
+  },
+
+  async deletePost(postId) {
+    const response = await axiosInstance.delete(`/posts/${postId}`);
+    return response.data;
+  },
+
   // Review endpoints
   async createReview(data) {
     const response = await axiosInstance.post('/reviews', data);

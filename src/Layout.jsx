@@ -34,7 +34,8 @@ const navItems = [
 
 export default function Layout() {
   const location = useLocation();
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { 
+    user, loading, isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const currentPage = useMemo(

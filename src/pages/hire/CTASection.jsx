@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Phone, Mail, ArrowRight } from 'lucide-react';
 
 export default function CTASection() {
@@ -21,13 +22,13 @@ export default function CTASection() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <button
-              type="button"
+            <Link
+              to="/contact"
               className="h-14 px-8 bg-slate-900 text-white font-semibold text-lg rounded-xl inline-flex items-center"
             >
               Book Now
               <ArrowRight className="w-5 h-5 ml-2" />
-            </button>
+            </Link>
             <a
               href="tel:+977 9815836412"
               className="flex items-center gap-2 h-14 px-8 bg-white/20 backdrop-blur-sm text-slate-900 font-semibold text-lg rounded-xl"
@@ -42,9 +43,6 @@ export default function CTASection() {
               <Mail className="w-5 h-5" />
               prithivirajsah584@gmail.com
             </a>
-          
-
-
             <span>24/7 Support</span>
           </div>
         </div>

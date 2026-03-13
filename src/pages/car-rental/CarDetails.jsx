@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Gauge, Users, Wind, ArrowLeft } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -14,6 +14,7 @@ const fallbackImage =
 export default function CarDetails() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [vehicleFromApi, setVehicleFromApi] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -106,6 +107,19 @@ export default function CarDetails() {
   
   const ratingValue = Number(car?.rating) || 4.7;
   const ratingCount = Number(car?.ratingCount) || 128;
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  useEffect(() => {
+    if (!car?.location) {
+      return;
+    }
+
+    setBookingForm((prev) => ({
+      ...prev,
+      pickup_location: prev.pickup_location || car.location,
+      return_location: prev.return_location || car.location,
+    }));
+  }, [car?.location]);
 
   const onBookingFieldChange = (field, value) => {
     setBookingForm((prev) => ({ ...prev, [field]: value }));
@@ -117,8 +131,35 @@ export default function CarDetails() {
       return;
     }
 
+    if (!api.isAuthenticated()) {
+      toast.error('Please login to continue with your booking.');
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
+    if (bookingForm.start_date < today) {
+      toast.error('Start date cannot be in the past.');
+      return;
+    }
+
+    if (bookingForm.end_date < bookingForm.start_date) {
+      toast.error('End date must be greater than or equal to start date.');
+      return;
+    }
+
     setBookingLoading(true);
     try {
+      const availability = await api.getBookingAvailability(
+        Number(id),
+        bookingForm.start_date,
+        bookingForm.end_date,
+      );
+
+      if (!availability?.available) {
+        toast.error('Selected dates are not available for this vehicle.');
+        return;
+      }
+
       const response = await api.createBooking({
         post_id: Number(id),
         pickup_location: bookingForm.pickup_location,
@@ -250,6 +291,7 @@ export default function CarDetails() {
                       <label className="text-sm text-gray-600">Start Date</label>
                       <input
                         type="date"
+                        min={today}
                         value={bookingForm.start_date}
                         onChange={(event) => onBookingFieldChange('start_date', event.target.value)}
                         className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
@@ -259,6 +301,7 @@ export default function CarDetails() {
                       <label className="text-sm text-gray-600">End Date</label>
                       <input
                         type="date"
+                        min={bookingForm.start_date || today}
                         value={bookingForm.end_date}
                         onChange={(event) => onBookingFieldChange('end_date', event.target.value)}
                         className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"

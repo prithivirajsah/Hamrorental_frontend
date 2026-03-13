@@ -15,14 +15,19 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = async () => {
+    const userData = await api.getProfile();
+    setUser(userData);
+    return userData;
+  };
+
   useEffect(() => {
     // Check if user is logged in on app start
     const initializeAuth = async () => {
       const token = api.getToken();
       if (token) {
         try {
-          const userData = await api.getProfile();
-          setUser(userData);
+          await refreshUser();
         } catch (error) {
           console.error('Failed to fetch user profile:', error);
           // Token might be invalid, remove it
@@ -62,8 +67,7 @@ export const AuthProvider = ({ children }) => {
         console.log('Login successful, fetching user profile...');
         // Fetch user profile after successful login
         try {
-          const userData = await api.getProfile();
-          setUser(userData);
+          const userData = await refreshUser();
           console.log('User profile loaded:', userData);
           return { success: true, user: userData };
         } catch (profileError) {
@@ -88,8 +92,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.googleAuth(idToken);
       if (response.access_token) {
         try {
-          const userData = await api.getProfile();
-          setUser(userData);
+          const userData = await refreshUser();
           return { success: true, user: userData };
         } catch (profileError) {
           console.error('Failed to fetch profile after Google auth:', profileError);
@@ -122,6 +125,7 @@ export const AuthProvider = ({ children }) => {
     googleAuth,
     logout,
     isAuthenticated,
+    refreshUser,
     loading,
   };
 

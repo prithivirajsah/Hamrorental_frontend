@@ -8,16 +8,29 @@ import api from '@/api';
 import config from '@/config/config';
 import { toast } from 'react-toastify';
 
-const initialForm = {
+const blankForm = {
   title: '',
   location: '',
   pricePerDay: '',
   description: '',
   contactNumber: '',
   features: [],
+  existingImageUrls: [],
   images: [],
   imageFiles: [],
 };
+
+const buildFormFromPost = (post) => ({
+  title: post.post_title || '',
+  location: post.location || '',
+  pricePerDay: String(post.price_per_day || ''),
+  description: post.description || '',
+  contactNumber: post.contact_number || '',
+  features: [...(post.features || [])],
+  existingImageUrls: [...(post.image_urls || [])],
+  images: [],
+  imageFiles: [],
+});
 
 const presetFeatures = [
   'Automatic',
@@ -34,8 +47,9 @@ const presetFeatures = [
   'Sunroof',
 ];
 
-export default function UserAddPost({ asModal = false, onClose }) {
-  const [form, setForm] = useState(initialForm);
+export default function UserAddPost({ asModal = false, onClose, initialPost = null, onSuccess }) {
+  const isEditing = Boolean(initialPost);
+  const [form, setForm] = useState(() => initialPost ? buildFormFromPost(initialPost) : blankForm);
   const [newFeature, setNewFeature] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,16 +103,20 @@ export default function UserAddPost({ asModal = false, onClose }) {
   };
 
   const removeImage = (item) => {
-    const imageIndex = form.images.findIndex((image) => image === item);
     if (item.startsWith('blob:')) {
+      const imageIndex = form.images.findIndex((image) => image === item);
       URL.revokeObjectURL(item);
+      setForm((prev) => ({
+        ...prev,
+        images: prev.images.filter((image) => image !== item),
+        imageFiles: prev.imageFiles.filter((_, index) => index !== imageIndex),
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        existingImageUrls: prev.existingImageUrls.filter((url) => url !== item),
+      }));
     }
-
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((image) => image !== item),
-      imageFiles: prev.imageFiles.filter((_, index) => index !== imageIndex),
-    }));
   };
 
   const handleSubmit = async (event) => {
@@ -114,19 +132,30 @@ export default function UserAddPost({ asModal = false, onClose }) {
       payload.append('description', form.description.trim());
       payload.append('features', JSON.stringify(form.features));
 
+      if (isEditing) {
+        payload.append('existing_image_urls', JSON.stringify(form.existingImageUrls));
+      }
+
       form.imageFiles.forEach((file) => {
         payload.append('images', file);
       });
 
-      await api.createPost(payload);
-      toast.success('Post submitted successfully.');
+      if (isEditing) {
+        await api.updatePost(initialPost.id, payload);
+        toast.success('Post updated successfully.');
+      } else {
+        await api.createPost(payload);
+        toast.success('Post submitted successfully.');
+      }
+
       form.images.forEach((image) => {
         if (image.startsWith('blob:')) {
           URL.revokeObjectURL(image);
         }
       });
-      setForm(initialForm);
+      setForm(blankForm);
       setNewFeature('');
+      if (onSuccess) onSuccess();
       if (asModal && onClose) onClose();
     } catch (error) {
       const backendError = error?.response?.data?.detail;
@@ -156,8 +185,8 @@ export default function UserAddPost({ asModal = false, onClose }) {
     <>
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create New Post</h1>
-          <p className="text-sm text-gray-500 mt-1">Publish your vehicle listing in a few quick steps.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{isEditing ? 'Edit Post' : 'Create New Post'}</h1>
+          <p className="text-sm text-gray-500 mt-1">{isEditing ? 'Update your vehicle listing details.' : 'Publish your vehicle listing in a few quick steps.'}</p>
         </div>
         {asModal && onClose && (
           <button
@@ -307,6 +336,18 @@ export default function UserAddPost({ asModal = false, onClose }) {
         <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-7 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {form.existingImageUrls.map((url) => (
+              <div key={url} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-100">
+                <img src={url.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}${url}` : url} alt="Existing" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(url)}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3 text-white" />
+                </button>
+              </div>
+            ))}
             {form.images.map((image) => (
               <div key={image} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-100">
                 <img src={image} alt="Uploaded" className="w-full h-full object-cover" />
@@ -344,10 +385,10 @@ export default function UserAddPost({ asModal = false, onClose }) {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Submitting...
+                {isEditing ? 'Updating...' : 'Submitting...'}
               </>
             ) : (
-              'Publish Post'
+              isEditing ? 'Update Post' : 'Publish Post'
             )}
           </Button>
         </div>
