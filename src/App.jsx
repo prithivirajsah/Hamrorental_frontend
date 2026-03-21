@@ -25,6 +25,7 @@ import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import UserAddPost from './pages/UserAddPost';
 import Orders from './pages/Orders';
+import OrderDetails from './pages/OrderDetails';
 import Reviews from './pages/Reviews';
 
 import Layout from './Layout';
@@ -96,6 +97,24 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["user"]}>
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/orders/:id"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <OrderDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/user/orders/:id"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <OrderDetails />
               </ProtectedRoute>
             }
           />

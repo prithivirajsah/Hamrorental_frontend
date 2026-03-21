@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 
 const blankForm = {
   title: '',
+  category: 'sedan',
   location: '',
   pricePerDay: '',
   description: '',
@@ -22,6 +23,7 @@ const blankForm = {
 
 const buildFormFromPost = (post) => ({
   title: post.post_title || '',
+  category: post.category || 'sedan',
   location: post.location || '',
   pricePerDay: String(post.price_per_day || ''),
   description: post.description || '',
@@ -45,6 +47,14 @@ const presetFeatures = [
   'Airbags',
   'USB Charging',
   'Sunroof',
+];
+
+const categoryOptions = [
+  { value: 'sedan', label: 'Sedan' },
+  { value: 'cabriolet', label: 'Cabriolet' },
+  { value: 'pickup', label: 'Pickup' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'minivan', label: 'Minivan' },
 ];
 
 export default function UserAddPost({ asModal = false, onClose, initialPost = null, onSuccess }) {
@@ -126,6 +136,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
     try {
       const payload = new FormData();
       payload.append('post_title', form.title.trim());
+      payload.append('category', form.category);
       payload.append('price_per_day', String(form.pricePerDay));
       payload.append('location', form.location.trim());
       payload.append('contact_number', form.contactNumber.trim());
@@ -234,6 +245,22 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
                   required
                 />
               </div>
+            </div>
+
+            <div>
+              <Label>Category *</Label>
+              <select
+                value={form.category}
+                onChange={(event) => setField('category', event.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              >
+                {categoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

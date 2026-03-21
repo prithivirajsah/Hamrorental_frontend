@@ -1,12 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { Gauge, Users, Wind, Heart } from 'lucide-react';
+import { Gauge, Users, Wind, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isInWishlist, toggleWishlist } from '../../utils/wishlistStorage';
 import { RatingDisplay } from '../../components/ui/rating';
 
+function parseImages(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return [];
+
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed)
+          ? parsed.filter(Boolean).map((item) => String(item).trim()).filter(Boolean)
+          : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [raw];
+  }
+
+  return [];
+}
+
 export default function CarCard({ car }) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const images = (() => {
+    const source = [
+      ...parseImages(car.images),
+      ...parseImages(car.image_urls),
+      ...parseImages(car.image_url),
+      ...parseImages(car.image),
+    ];
+
+    if (source.length === 0) return [];
+
+    return source.filter((value, index) => source.indexOf(value) === index);
+  })();
+  const hasMultipleImages = images.length > 1;
   const featureOne = car.features?.[0] || car.fuel || 'PB 95';
   const featureTwo = car.features?.[1] || 'Air Conditioner';
   const ratingValue = Number(car.rating) || 4.6;
@@ -16,6 +56,16 @@ export default function CarCard({ car }) {
     setLiked(isInWishlist(car.id));
   }, [car.id]);
 
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [car.id]);
+
+  useEffect(() => {
+    if (activeImageIndex >= images.length) {
+      setActiveImageIndex(0);
+    }
+  }, [activeImageIndex, images.length]);
+
   const handleViewDetails = () => {
     navigate(`/vehicles/${car.id}`, { state: { car } });
   };
@@ -24,6 +74,18 @@ export default function CarCard({ car }) {
     event.stopPropagation();
     const result = toggleWishlist(car);
     setLiked(result.added);
+  };
+
+  const showPreviousImage = (event) => {
+    event.stopPropagation();
+    if (!hasMultipleImages) return;
+    setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const showNextImage = (event) => {
+    event.stopPropagation();
+    if (!hasMultipleImages) return;
+    setActiveImageIndex((prev) => (prev + 1) % images.length);
   };
 
   return (
@@ -40,8 +102,30 @@ export default function CarCard({ car }) {
             className={`w-4.5 h-4.5 ${liked ? 'fill-[#695ED9] text-[#695ED9]' : 'text-gray-500'}`}
           />
         </button>
+
+        {hasMultipleImages ? (
+          <>
+            <button
+              type="button"
+              onClick={showPreviousImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
+            </button>
+            <button
+              type="button"
+              onClick={showNextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            </button>
+          </>
+        ) : null}
+
         <img
-          src={car.image}
+          src={images[activeImageIndex] || car.image}
           alt={car.name}
           className="w-4/5 h-auto object-contain"
         />

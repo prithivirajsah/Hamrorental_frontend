@@ -23,7 +23,7 @@ export function RatingDisplay({
   return (
     <div className={`inline-flex items-center gap-2 ${className}`.trim()}>
       <div className="flex items-center gap-1" aria-label={`Rated ${normalizedValue} out of ${max}`}>
-        {Array.from({ length: max }).map((_, index) => {
+        {Array.from({ length: max }).map((_, index) => { 
           const starNumber = index + 1;
           const isFilled = starNumber <= normalizedValue;
 

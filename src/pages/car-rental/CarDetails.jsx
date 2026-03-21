@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Gauge, Users, Wind, ArrowLeft } from 'lucide-react';
+import { Gauge, Users, Wind, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import api from '../../api';
@@ -10,6 +10,37 @@ import { toast } from 'react-toastify';
 
 const fallbackImage =
   'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=450&fit=crop&auto=format';
+
+function toAbsoluteImage(url) {
+  if (!url) return fallbackImage;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  return `${apiBaseUrl}${url}`;
+}
+
+function parseImages(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return [];
+
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [raw];
+  }
+
+  return [];
+}
 
 export default function CarDetails() {
   const { id } = useParams();
@@ -22,6 +53,7 @@ export default function CarDetails() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [bookingForm, setBookingForm] = useState({
     pickup_location: '',
     return_location: '',
@@ -69,13 +101,29 @@ export default function CarDetails() {
       try {
         const matched = await api.getPostById(id);
         if (matched) {
+          const sourceImages = (() => {
+            const apiImages = parseImages(matched.image_urls);
+            const localImages = parseImages(matched.images);
+            const fallbackCandidates = [matched.image_url, matched.image]
+              .map((item) => parseImages(item))
+              .flat();
+            if (apiImages.length > 0) return apiImages;
+            if (localImages.length > 0) return localImages;
+            return fallbackCandidates;
+          })();
+
+          const normalizedImages = sourceImages
+            .map((item) => toAbsoluteImage(String(item).trim()))
+            .filter(Boolean);
+
           const normalizedCurrency = !matched.currency || matched.currency === '$' || String(matched.currency).toUpperCase() === 'USD' ? 'Rs.' : matched.currency;
           setVehicleFromApi({
             id: matched.id,
             name: matched.post_title || matched.name,
             price: `${normalizedCurrency} ${matched.price_per_day ?? matched.price ?? 0}`,
             transmission: matched.transmission || matched.category || 'Automatic',
-            image: matched.image_urls?.[0] || matched.image_url || matched.image || fallbackImage,
+            image: normalizedImages[0] || fallbackImage,
+            images: normalizedImages.length > 0 ? normalizedImages : [fallbackImage],
             category: matched.category || 'Vehicle',
             fuel: matched.features?.[0] || matched.fuel || 'PB 95',
             features: Array.isArray(matched.features) ? matched.features : [],
@@ -95,15 +143,36 @@ export default function CarDetails() {
 
   const car = useMemo(() => {
     if (stateCar) {
+      const sourceImages = (() => {
+        const apiImages = parseImages(stateCar.image_urls);
+        const localImages = parseImages(stateCar.images);
+        const fallbackCandidates = [stateCar.image]
+          .map((item) => parseImages(item))
+          .flat();
+        if (apiImages.length > 0) return apiImages;
+        if (localImages.length > 0) return localImages;
+        return fallbackCandidates;
+      })();
+
+      const normalizedImages = sourceImages
+        .map((item) => toAbsoluteImage(String(item).trim()))
+        .filter(Boolean);
+
       return {
         ...stateCar,
-        image: stateCar.image || fallbackImage,
+        image: normalizedImages[0] || fallbackImage,
+        images: normalizedImages.length > 0 ? normalizedImages : [fallbackImage],
         category: stateCar.category || 'Vehicle',
         fuel: stateCar.fuel || 'PB 95',
       };
     }
     return vehicleFromApi;
   }, [stateCar, vehicleFromApi]);
+
+  const detailImages = Array.isArray(car?.images) && car.images.length > 0
+    ? car.images
+    : [car?.image || fallbackImage];
+  const hasMultipleImages = detailImages.length > 1;
   
   const ratingValue = Number(car?.rating) || 4.7;
   const ratingCount = Number(car?.ratingCount) || 128;
@@ -120,6 +189,10 @@ export default function CarDetails() {
       return_location: prev.return_location || car.location,
     }));
   }, [car?.location]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [car?.id]);
 
   const onBookingFieldChange = (field, value) => {
     setBookingForm((prev) => ({ ...prev, [field]: value }));
@@ -212,7 +285,28 @@ export default function CarDetails() {
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 sm:p-8">
               <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center">
-                <img src={car.image} alt={car.name} className="w-full max-h-80 object-contain" />
+                <div className="relative w-full flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveImageIndex((prev) => (prev === 0 ? detailImages.length - 1 : prev - 1))}
+                    disabled={!hasMultipleImages}
+                    className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center ${hasMultipleImages ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveImageIndex((prev) => (prev + 1) % detailImages.length)}
+                    disabled={!hasMultipleImages}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center ${hasMultipleImages ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-700" />
+                  </button>
+
+                  <img src={detailImages[activeImageIndex] || car.image} alt={car.name} className="w-full max-h-80 object-contain" />
+                </div>
               </div>
 
               <div>

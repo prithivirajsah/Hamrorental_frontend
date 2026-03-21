@@ -11,9 +11,47 @@ function toAbsoluteImage(url) {
 	return `${apiBaseUrl}${url}`;
 }
 
+function parseImages(value) {
+	if (Array.isArray(value)) {
+		return value.filter(Boolean);
+	}
+
+	if (typeof value === 'string') {
+		const raw = value.trim();
+		if (!raw) return [];
+
+		if (raw.startsWith('[') && raw.endsWith(']')) {
+			try {
+				const parsed = JSON.parse(raw);
+				return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+			} catch {
+				return [];
+			}
+		}
+
+		return [raw];
+	}
+
+	return [];
+}
+
 export default function CarListing({ vehicles }) {
 	const cars = vehicles && vehicles.length > 0
 		? vehicles.map((vehicle) => ({
+				images: (() => {
+					const apiImages = parseImages(vehicle.image_urls);
+					const localImages = parseImages(vehicle.images);
+					const fallbackCandidates = [vehicle.image_url, vehicle.image]
+						.map((item) => parseImages(item))
+						.flat();
+					const sourceImages = apiImages.length > 0
+						? apiImages
+						: (localImages.length > 0 ? localImages : fallbackCandidates);
+					const normalized = sourceImages
+						.map((item) => toAbsoluteImage(String(item).trim()))
+						.filter(Boolean);
+					return normalized.length > 0 ? normalized : [fallbackImage];
+				})(),
 				id: vehicle.id,
 				name: vehicle.post_title || vehicle.name || 'Vehicle',
 				price: `${!vehicle.currency || vehicle.currency === '$' || String(vehicle.currency).toUpperCase() === 'USD' ? 'Rs.' : vehicle.currency} ${vehicle.price_per_day ?? 0}`,
@@ -25,6 +63,10 @@ export default function CarListing({ vehicles }) {
 				location: vehicle.location || '',
 				description: vehicle.description || '',
 		  }))
+			.map((car) => ({
+				...car,
+				image: car.images[0],
+			}))
 		: [];
 
 	return (

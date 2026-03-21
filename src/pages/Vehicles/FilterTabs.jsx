@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const categories = [
+const defaultCategories = [
   { id: 'all', label: 'All vehicles', icon: '🚗' },
   { id: 'sedan', label: 'Sedan', icon: '🚙' },
   { id: 'cabriolet', label: 'Cabriolet', icon: '🏎️' },
@@ -10,10 +10,14 @@ const categories = [
   { id: 'minivan', label: 'Minivan', icon: '🚌' },
 ];
 
-export default function FilterTabs({ activeTab, onTabChange }) {
+export default function FilterTabs({ activeTab, onTabChange, categories = defaultCategories }) {
+  const safeCategories = Array.isArray(categories) && categories.length > 0
+    ? categories
+    : defaultCategories;
+
   return (
     <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-      {categories.map((category) => (
+      {safeCategories.map((category) => (
         <motion.button
           key={category.id}
           onClick={() => onTabChange(category.id)}

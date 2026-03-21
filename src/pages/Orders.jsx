@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CalendarDays, Car, CircleDollarSign, ClipboardList } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -33,6 +33,7 @@ const normalizeBookings = (payload) => {
 };
 
 export default function Orders() {
+  const location = useLocation();
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,6 +69,8 @@ export default function Orders() {
     completed: bookings.filter((booking) => booking.status === 'completed').length,
     cancelled: bookings.filter((booking) => booking.status === 'cancelled').length,
   }), [bookings]);
+
+  const detailsBasePath = location.pathname.startsWith('/user/orders') ? '/user/orders' : '/orders';
 
   return (
     <div className="min-h-screen bg-[#F3F2F2] text-black">
@@ -143,9 +146,11 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {filteredBookings.map((booking) => (
-                <article
+                <Link
                   key={booking.id}
-                  className="border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-sm transition-shadow"
+                  to={`${detailsBasePath}/${booking.id}`}
+                  state={{ booking }}
+                  className="block border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="space-y-2">
@@ -171,10 +176,11 @@ export default function Orders() {
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getStatusClass(booking.status)}`}>
                         {booking.status || 'pending'}
                       </span>
+                      <span className="text-xs font-medium text-indigo-600">View details</span>
                       <p className="text-xs text-gray-500">Booked on {formatDate(booking.created_at)}</p>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}

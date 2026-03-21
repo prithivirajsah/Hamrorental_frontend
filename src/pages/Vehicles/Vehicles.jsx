@@ -14,10 +14,35 @@ function toAbsoluteImage(url) {
   return `${apiBaseUrl}${url}`;
 }
 
+function parseImages(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return [];
+
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [raw];
+  }
+
+  return [];
+}
+
 export default function Vehicles() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [vehiclesData, setVehiclesData] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +51,26 @@ export default function Vehicles() {
     const loadVehicles = async () => {
       setLoading(true);
       try {
-        const posts = await api.getPosts({ limit: 100 });
+        const [posts, categoryOptions] = await Promise.all([
+          api.getPosts({ limit: 100, category: activeTab }),
+          api.getPostCategories(),
+        ]);
         const mappedVehicles = Array.isArray(posts)
           ? posts.map((post) => ({
+              images: (() => {
+                const apiImages = parseImages(post.image_urls);
+                const localImages = parseImages(post.images);
+                const fallbackCandidates = [post.image_url, post.image]
+                  .map((item) => parseImages(item))
+                  .flat();
+                const sourceImages = apiImages.length > 0
+                  ? apiImages
+                  : (localImages.length > 0 ? localImages : fallbackCandidates);
+                const normalized = sourceImages
+                  .map((item) => toAbsoluteImage(String(item).trim()))
+                  .filter(Boolean);
+                return normalized.length > 0 ? normalized : [fallbackImage];
+              })(),
               id: post.id,
               name: post.post_title || 'Vehicle',
               category: (post.category || '').toLowerCase(),
@@ -37,19 +79,26 @@ export default function Vehicles() {
               fuel: post.features?.[0] || 'PB 95',
               features: Array.isArray(post.features) ? post.features : [],
               image: toAbsoluteImage(post.image_urls?.[0]),
+              image_urls: parseImages(post.image_urls),
               location: post.location || '',
               description: post.description || '',
               contact_number: post.contact_number || '',
             }))
+              .map((vehicle) => ({
+                ...vehicle,
+                image: vehicle.images[0],
+              }))
           : [];
 
         if (isMounted) {
           setVehiclesData(mappedVehicles);
+          setCategories(Array.isArray(categoryOptions) ? categoryOptions : []);
         }
       } catch (error) {
         console.error('Failed to load vehicles:', error);
         if (isMounted) {
           setVehiclesData([]);
+          setCategories([]);
         }
       } finally {
         if (isMounted) {
@@ -63,17 +112,16 @@ export default function Vehicles() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeTab]);
 
   const filteredVehicles = useMemo(() => {
     return vehiclesData.filter((vehicle) => {
-      const matchesCategory = activeTab === 'all' || (vehicle.category && vehicle.category === activeTab);
       const matchesSearch = vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (vehicle.category || '').includes(searchQuery.toLowerCase()) ||
         (vehicle.location || '').toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [searchQuery, vehiclesData]);
 
   return (
     <div className="min-h-screen bg-[#F3F2F2]">
@@ -85,7 +133,7 @@ export default function Vehicles() {
           </h1>
           {/* Uncomment below if SearchBar exists */}
           {/* <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} /> */}
-          <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} categories={categories} />
         </div>
         {loading ? (
           <div className="text-center py-20">

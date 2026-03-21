@@ -107,6 +107,11 @@ const api = {
     return response.data;
   },
 
+  async getPostCategories() {
+    const response = await axiosInstance.get("/posts/categories");
+    return response.data;
+  },
+
   async getMyPosts(params = {}) {
     const response = await axiosInstance.get("/posts/me", { params });
     return response.data;
@@ -171,6 +176,11 @@ const api = {
 
   async getMyBookings(params = {}) {
     const response = await axiosInstance.get('/bookings/me', { params });
+    return response.data;
+  },
+
+  async getBookingById(bookingId) {
+    const response = await axiosInstance.get(`/bookings/${bookingId}`);
     return response.data;
   },
 
