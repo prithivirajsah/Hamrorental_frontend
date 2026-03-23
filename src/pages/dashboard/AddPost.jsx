@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminData } from '@/api/adminDataClient';
+import api from '@/api';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -11,16 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Upload, X, Plus, ArrowLeft, Loader2 } from 'lucide-react';
 
 const DEFAULT_FORM = {
-  name: '', brand: '', model: '', year: new Date().getFullYear(),
-  category: 'Sedan', fuel_type: 'Petrol', transmission: 'Automatic',
-  seats: 5, color: '', price_per_day: '', price_per_hour: '',
-  description: '', features: [], location: '', status: 'available',
-  images: [],
+  post_title: '', category: 'sedan', price_per_day: '',
+  description: '', features: [], location: '', contact_number: '',
+  image_urls: [],
+  image_files: [],
 };
 
 const PRESET_FEATURES = [
   'Automatic',
-  'PB 95',
   'Air Conditioner',
   'GPS Navigation',
   'Bluetooth',
@@ -29,8 +27,6 @@ const PRESET_FEATURES = [
   'Cruise Control',
   'ABS',
   'Airbags',
-  'USB Charging',
-  'Sunroof',
 ];
 
 export default function AddPost() {
@@ -44,40 +40,115 @@ export default function AddPost() {
   const [newFeature, setNewFeature] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  const { data: existingVehicles } = useQuery({
+  const { data: existingVehicle } = useQuery({
     queryKey: ['vehicle', editId],
-    queryFn: () => adminData.entities.Vehicle.filter({ id: editId }),
+    queryFn: () => api.getPostById(parseInt(editId)),
     enabled: !!editId,
   });
 
   useEffect(() => {
-    if (existingVehicles?.[0]) {
-      setForm({ ...DEFAULT_FORM, ...existingVehicles[0] });
+    if (existingVehicle?.id) {
+      setForm({
+        post_title: existingVehicle.post_title || '',
+        category: existingVehicle.category || 'sedan',
+        price_per_day: existingVehicle.price_per_day || '',
+        location: existingVehicle.location || '',
+        contact_number: existingVehicle.contact_number || '',
+        description: existingVehicle.description || '',
+        features: existingVehicle.features || [],
+        image_urls: existingVehicle.image_urls || [],
+      });
     }
-  }, [existingVehicles]);
+  }, [existingVehicle?.id]);
 
   const saveMutation = useMutation({
-    mutationFn: (data) => isEdit
-      ? adminData.entities.Vehicle.update(editId, data)
-      : adminData.entities.Vehicle.create(data),
+    mutationFn: async (data) => {
+      const formData = new FormData();
+      formData.append('post_title', data.post_title);
+      formData.append('category', data.category.toLowerCase());
+      formData.append('price_per_day', parseFloat(data.price_per_day));
+      formData.append('location', data.location);
+      formData.append('contact_number', data.contact_number);
+      formData.append('description', data.description);
+      formData.append('features', JSON.stringify(data.features || []));
+
+      const existingImageUrls = (data.image_urls || []).filter(
+        (url) => typeof url === 'string' && !url.startsWith('data:')
+      );
+      formData.append('existing_image_urls', JSON.stringify(existingImageUrls));
+
+      // Handle image uploads
+      if (data.image_files && data.image_files.length > 0) {
+        data.image_files.forEach(file => {
+          formData.append('images', file);
+        });
+      }
+
+      return isEdit ? api.updatePost(editId, formData) : api.createPost(formData);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles', 'admin'] });
       navigate(createPageUrl('AdminVehicles'));
+    },
+    onError: (error) => {
+      console.error('Save error:', error);
+      const detail = error?.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        alert('Error: ' + detail.map((item) => item.msg || item.toString()).join(', '));
+      } else {
+        alert('Error: ' + (detail || 'Failed to save vehicle'));
+      }
     },
   });
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
+
     setUploading(true);
-    for (const file of files) {
-      const { file_url } = await adminData.integrations.Core.UploadFile({ file });
-      setForm(prev => ({ ...prev, images: [...(prev.images || []), file_url] }));
+    try {
+      const fileArray = [...(form.image_files || []), ...files];
+      setForm(prev => ({ ...prev, image_files: fileArray }));
+
+      // Show previews
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageUrl = event.target?.result;
+          if (imageUrl) {
+            setForm(prev => ({
+              ...prev,
+              image_urls: [...(prev.image_urls || []), imageUrl]
+            }));
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
-  const removeImage = (idx) => setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+  const removeImage = (idx) => {
+    const selectedUrl = form.image_urls?.[idx];
+    const isDataUrl = typeof selectedUrl === 'string' && selectedUrl.startsWith('data:');
+    let updatedImageFiles = [...(form.image_files || [])];
+
+    if (isDataUrl) {
+      const dataUrlIndex = (form.image_urls || [])
+        .slice(0, idx + 1)
+        .filter((url) => typeof url === 'string' && url.startsWith('data:')).length - 1;
+      if (dataUrlIndex >= 0) {
+        updatedImageFiles = updatedImageFiles.filter((_, fileIndex) => fileIndex !== dataUrlIndex);
+      }
+    }
+
+    setForm(prev => ({
+      ...prev,
+      image_urls: prev.image_urls.filter((_, i) => i !== idx),
+      image_files: updatedImageFiles,
+    }));
+  };
 
   const addFeature = () => {
     const trimmed = newFeature.trim();
@@ -97,25 +168,42 @@ export default function AddPost() {
     const hasFeature = (form.features || []).includes(feature);
     if (hasFeature) {
       setForm(prev => ({ ...prev, features: prev.features.filter((item) => item !== feature) }));
-      return;
+    } else {
+      setForm(prev => ({ ...prev, features: [...(prev.features || []), feature] }));
     }
-
-    setForm(prev => ({ ...prev, features: [...(prev.features || []), feature] }));
   };
 
-  const removeFeature = (idx) => setForm(prev => ({ ...prev, features: prev.features.filter((_, i) => i !== idx) }));
+  const removeFeature = (idx) => {
+    setForm(prev => ({ ...prev, features: prev.features.filter((_, i) => i !== idx) }));
+  };
 
   const set = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    saveMutation.mutate({
-      ...form,
-      year: parseInt(form.year) || new Date().getFullYear(),
-      seats: parseInt(form.seats) || 5,
-      price_per_day: parseFloat(form.price_per_day) || 0,
-      price_per_hour: form.price_per_hour ? parseFloat(form.price_per_hour) : undefined,
-    });
+
+    if (!form.post_title.trim()) {
+      alert('Please enter a vehicle name');
+      return;
+    }
+    if (!form.price_per_day) {
+      alert('Please enter price per day');
+      return;
+    }
+    if (!form.location.trim()) {
+      alert('Please enter location');
+      return;
+    }
+    if (!form.contact_number.trim()) {
+      alert('Please enter contact number');
+      return;
+    }
+    if (!form.description.trim()) {
+      alert('Please enter description');
+      return;
+    }
+
+    saveMutation.mutate(form);
   };
 
   return (
@@ -139,71 +227,45 @@ export default function AddPost() {
           <h2 className="font-semibold text-gray-900 mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Vehicle Name *</Label>
-              <Input className="mt-1" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Toyota Fortuner 2023" required />
+              <Label>Vehicle Title/Name *</Label>
+              <Input 
+                className="mt-1" 
+                value={form.post_title} 
+                onChange={e => set('post_title', e.target.value)} 
+                placeholder="e.g. Toyota Fortuner 2023" 
+                required 
+              />
             </div>
             <div>
-              <Label>Brand *</Label>
-              <Input className="mt-1" value={form.brand} onChange={e => set('brand', e.target.value)} placeholder="e.g. Toyota" required />
+              <Label>Contact Number *</Label>
+              <Input 
+                className="mt-1" 
+                value={form.contact_number} 
+                onChange={e => set('contact_number', e.target.value)} 
+                placeholder="e.g. +977-9841234567" 
+                required 
+              />
             </div>
             <div>
-              <Label>Model *</Label>
-              <Input className="mt-1" value={form.model} onChange={e => set('model', e.target.value)} placeholder="e.g. Fortuner" required />
+              <Label>Location *</Label>
+              <Input 
+                className="mt-1" 
+                value={form.location} 
+                onChange={e => set('location', e.target.value)} 
+                placeholder="e.g. Kathmandu, Nepal" 
+                required 
+              />
             </div>
             <div>
-              <Label>Year</Label>
-              <Input className="mt-1" type="number" value={form.year} onChange={e => set('year', e.target.value)} min={1990} max={2030} />
-            </div>
-            <div>
-              <Label>Color</Label>
-              <Input className="mt-1" value={form.color} onChange={e => set('color', e.target.value)} placeholder="e.g. Pearl White" />
-            </div>
-            <div>
-              <Label>Location</Label>
-              <Input className="mt-1" value={form.location} onChange={e => set('location', e.target.value)} placeholder="e.g. Kathmandu, Nepal" />
-            </div>
-          </div>
-        </div>
-
-        {/* Specifications */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Specifications</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>Category</Label>
+              <Label>Vehicle Category *</Label>
               <Select value={form.category} onValueChange={v => set('category', v)}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['SUV', 'Sedan', 'Hatchback', 'Pickup', 'Van', 'Luxury', 'Electric'].map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  {['sedan', 'suv', 'pickup', 'cabriolet', 'minivan'].map(c => (
+                    <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>Fuel Type</Label>
-              <Select value={form.fuel_type} onValueChange={v => set('fuel_type', v)}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {['Petrol', 'Diesel', 'Electric', 'Hybrid'].map(f => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Transmission</Label>
-              <Select value={form.transmission} onValueChange={v => set('transmission', v)}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Automatic">Automatic</SelectItem>
-                  <SelectItem value="Manual">Manual</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Number of Seats</Label>
-              <Input className="mt-1" type="number" value={form.seats} onChange={e => set('seats', e.target.value)} min={1} max={20} />
             </div>
           </div>
         </div>
@@ -214,11 +276,16 @@ export default function AddPost() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Price per Day (NPR) *</Label>
-              <Input className="mt-1" type="number" value={form.price_per_day} onChange={e => set('price_per_day', e.target.value)} placeholder="0.00" min={0} step={0.01} required />
-            </div>
-            <div>
-              <Label>Price per Hour (NPR) <span className="text-gray-400 font-normal">optional</span></Label>
-              <Input className="mt-1" type="number" value={form.price_per_hour} onChange={e => set('price_per_hour', e.target.value)} placeholder="0.00" min={0} step={0.01} />
+              <Input 
+                className="mt-1" 
+                type="number" 
+                value={form.price_per_day} 
+                onChange={e => set('price_per_day', e.target.value)} 
+                placeholder="100" 
+                min={0} 
+                step={1} 
+                required 
+              />
             </div>
           </div>
         </div>
@@ -227,7 +294,7 @@ export default function AddPost() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-900 mb-4">Vehicle Images</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(form.images || []).map((img, i) => (
+            {(form.image_urls || []).map((img, i) => (
               <div key={i} className="relative group aspect-video">
                 <img src={img} alt="" className="w-full h-full object-cover rounded-xl" />
                 <button
@@ -248,7 +315,14 @@ export default function AddPost() {
                   <span className="text-xs text-gray-400">Upload</span>
                 </>
               )}
-              <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={uploading} />
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                onChange={handleImageUpload} 
+                className="hidden" 
+                disabled={uploading} 
+              />
             </label>
           </div>
         </div>
@@ -258,12 +332,13 @@ export default function AddPost() {
           <h2 className="font-semibold text-gray-900 mb-4">Description & Features</h2>
           <div className="space-y-4">
             <div>
-              <Label>Description</Label>
+              <Label>Description *</Label>
               <Textarea
                 className="mt-1 h-24"
                 value={form.description}
                 onChange={e => set('description', e.target.value)}
                 placeholder="Describe the vehicle, its condition, and highlights..."
+                required
               />
             </div>
             <div>
@@ -311,22 +386,6 @@ export default function AddPost() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Availability */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Availability</h2>
-          <div className="max-w-xs">
-            <Label>Status</Label>
-            <Select value={form.status} onValueChange={v => set('status', v)}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="available">Available</SelectItem>
-                <SelectItem value="unavailable">Unavailable</SelectItem>
-                <SelectItem value="maintenance">Maintenance</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 

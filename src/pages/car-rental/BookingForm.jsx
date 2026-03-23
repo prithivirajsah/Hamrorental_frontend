@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SlArrowDown } from "react-icons/sl";
 import api from '../../api';
+import { toast } from 'react-toastify';
 
 export default function BookingForm() {
   const [posts, setPosts] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
     post_id: '',
@@ -41,7 +41,7 @@ export default function BookingForm() {
         }
       } catch (loadError) {
         if (mounted) {
-          setError('Failed to load vehicles. Please refresh and try again.');
+          toast.error('Failed to load vehicles. Please refresh and try again.');
         }
       } finally {
         if (mounted) {
@@ -58,8 +58,16 @@ export default function BookingForm() {
   }, []);
 
   const placeOptions = useMemo(() => {
+    const normalizePlace = (place) => {
+      const value = String(place || '').trim();
+      if (value.toLowerCase() === 'kathamandu') {
+        return 'Kathmandu';
+      }
+      return value;
+    };
+
     const apiPlaces = posts
-      .map((post) => String(post.location || '').trim())
+      .map((post) => normalizePlace(post.location))
       .filter(Boolean);
     const defaults = ['Kathmandu', 'Pokhara', 'Chitwan'];
     return [...new Set([...apiPlaces, ...defaults])];
@@ -81,7 +89,6 @@ export default function BookingForm() {
 
   const handleSubmit = async () => {
     setError('');
-    setSuccess('');
 
     if (!form.post_id || !form.pickup_location || !form.return_location || !form.start_date || !form.end_date) {
       setError('Please fill all required fields.');
@@ -93,13 +100,31 @@ export default function BookingForm() {
       return;
     }
 
+    // Check authentication
     if (!api.isAuthenticated()) {
-      window.location.href = '/login';
+      setError('Please log in to create a booking.');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Verify session is still valid
+      try {
+        await api.getProfile();
+      } catch (sessionError) {
+        if (sessionError?.response?.status === 401) {
+          localStorage.removeItem('token');
+          setError('Your session has expired. Please log in again.');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+          return;
+        }
+      }
+
       const availability = await api.getBookingAvailability(
         Number(form.post_id),
         form.start_date,
@@ -119,16 +144,22 @@ export default function BookingForm() {
         end_date: form.end_date,
       });
 
-      setSuccess(response?.message || 'Booking created successfully.');
+      toast.success(response?.message || 'Booking created successfully.');
       setForm((prev) => ({
         ...prev,
         start_date: '',
         end_date: '',
       }));
     } catch (submitError) {
+      console.error('Booking submission error:', submitError);
       const detail = submitError?.response?.data?.detail;
       if (Array.isArray(detail)) {
         setError(detail.map((item) => item.msg || String(item)).join(', '));
+      } else if (submitError?.response?.status === 401) {
+        setError('Please log in to create a booking.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
       } else {
         setError(detail || 'Failed to create booking. Please try again.');
       }
@@ -219,7 +250,6 @@ export default function BookingForm() {
         </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {success ? <p className="text-sm text-green-700">{success}</p> : null}
 
         {/* Book Now Button */}
         <button

@@ -260,6 +260,11 @@ const api = {
     const response = await axiosInstance.get("/admin/dashboard", { params });
     return response.data;
   },
+
+  async getAdminPosts(params = {}) {
+    const response = await axiosInstance.get("/admin/posts", { params });
+    return response.data;
+  },
 };
 
 export default api;

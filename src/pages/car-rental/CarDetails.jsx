@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Gauge, Users, Wind, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import api from '../../api';
+import config from '../../config/config';
 import { RatingDisplay, RatingInput } from '../../components/ui/rating';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -14,7 +15,7 @@ const fallbackImage =
 function toAbsoluteImage(url) {
   if (!url) return fallbackImage;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const apiBaseUrl = config.API_BASE_URL;
   return `${apiBaseUrl}${url}`;
 }
 
@@ -42,6 +43,24 @@ function parseImages(value) {
   return [];
 }
 
+function addDays(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
+function getRangeDays(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const diff = Math.floor((end.getTime() - start.getTime()) / millisecondsPerDay) + 1;
+  return Math.max(1, diff);
+}
+
+function formatDateForToast(dateString) {
+  return new Date(`${dateString}T00:00:00`).toLocaleDateString('en-GB');
+}
+
 export default function CarDetails() {
   const { id } = useParams();
   const location = useLocation();
@@ -51,6 +70,9 @@ export default function CarDetails() {
   const [loading, setLoading] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const bookingRequestInFlightRef = useRef(false);
+  const [reviewEligibilityLoading, setReviewEligibilityLoading] = useState(false);
+  const [canReview, setCanReview] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -79,6 +101,8 @@ export default function CarDetails() {
         rating: userRating,
         content: reviewText || `Rated ${userRating} stars for ${car?.name || 'this vehicle'}.`,
       });
+
+      window.dispatchEvent(new Event('hamro_reviews_api_updated'));
 
       toast.success('Thanks for your feedback!');
       setUserRating(0);
@@ -174,8 +198,9 @@ export default function CarDetails() {
     : [car?.image || fallbackImage];
   const hasMultipleImages = detailImages.length > 1;
   
-  const ratingValue = Number(car?.rating) || 4.7;
-  const ratingCount = Number(car?.ratingCount) || 128;
+  const ratingValue = Number(car?.rating ?? car?.average_rating ?? car?.avg_rating ?? 0);
+  const ratingCount = Number(car?.ratingCount ?? car?.rating_count ?? car?.reviewCount ?? car?.reviews_count ?? 0);
+  const hasGuestRating = ratingCount > 0;
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   useEffect(() => {
@@ -194,11 +219,62 @@ export default function CarDetails() {
     setActiveImageIndex(0);
   }, [car?.id]);
 
+  useEffect(() => {
+    const checkReviewEligibility = async () => {
+      if (!car?.id || !user?.id || !api.isAuthenticated()) {
+        setCanReview(false);
+        return;
+      }
+
+      setReviewEligibilityLoading(true);
+      try {
+        const myBookings = await api.getMyBookings({ limit: 100 });
+        const hasBookingForCar = (Array.isArray(myBookings) ? myBookings : []).some(
+          (booking) => Number(booking.post_id ?? booking.postId) === Number(car.id)
+            && ['pending', 'confirmed', 'completed'].includes(String(booking.status || '').toLowerCase()),
+        );
+        setCanReview(hasBookingForCar);
+      } catch {
+        setCanReview(false);
+      } finally {
+        setReviewEligibilityLoading(false);
+      }
+    };
+
+    checkReviewEligibility();
+  }, [car?.id, user?.id]);
+
   const onBookingFieldChange = (field, value) => {
     setBookingForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const findNextAvailableDateRange = async (postId, startDate, endDate) => {
+    const totalDays = getRangeDays(startDate, endDate);
+    let candidateStart = addDays(startDate, 1);
+
+    for (let index = 0; index < 45; index += 1) {
+      const candidateEnd = addDays(candidateStart, totalDays - 1);
+
+      try {
+        const availability = await api.getBookingAvailability(postId, candidateStart, candidateEnd);
+        if (availability?.available) {
+          return { start_date: candidateStart, end_date: candidateEnd };
+        }
+      } catch {
+        // Keep searching nearby dates.
+      }
+
+      candidateStart = addDays(candidateStart, 1);
+    }
+
+    return null;
+  };
+
   const handleBookNow = async () => {
+    if (bookingRequestInFlightRef.current || bookingLoading) {
+      return;
+    }
+
     if (!bookingForm.pickup_location || !bookingForm.return_location || !bookingForm.start_date || !bookingForm.end_date) {
       toast.error('Please fill all required booking fields.');
       return;
@@ -220,19 +296,9 @@ export default function CarDetails() {
       return;
     }
 
+    bookingRequestInFlightRef.current = true;
     setBookingLoading(true);
     try {
-      const availability = await api.getBookingAvailability(
-        Number(id),
-        bookingForm.start_date,
-        bookingForm.end_date,
-      );
-
-      if (!availability?.available) {
-        toast.error('Selected dates are not available for this vehicle.');
-        return;
-      }
-
       const response = await api.createBooking({
         post_id: Number(id),
         pickup_location: bookingForm.pickup_location,
@@ -243,6 +309,7 @@ export default function CarDetails() {
       });
 
       toast.success(response?.message || 'Booking created successfully.');
+      setCanReview(true);
       setBookingForm({
         pickup_location: '',
         return_location: '',
@@ -255,11 +322,29 @@ export default function CarDetails() {
       const detail = error?.response?.data?.detail;
       if (Array.isArray(detail)) {
         toast.error(detail.map((item) => item.msg || String(item)).join(', '));
+      } else if (error?.response?.status === 409) {
+        const suggestion = await findNextAvailableDateRange(
+          Number(id),
+          bookingForm.start_date,
+          bookingForm.end_date,
+        );
+
+        if (suggestion) {
+          setBookingForm((prev) => ({
+            ...prev,
+            start_date: suggestion.start_date,
+            end_date: suggestion.end_date,
+          }));
+          toast.info(`Selected dates are unavailable. Suggested: ${formatDateForToast(suggestion.start_date)} to ${formatDateForToast(suggestion.end_date)}.`);
+        } else {
+          toast.error('Selected dates are unavailable. Please choose another date range.');
+        }
       } else {
         toast.error(detail || 'Failed to create booking. Please login and try again.');
       }
     } finally {
       setBookingLoading(false);
+      bookingRequestInFlightRef.current = false;
     }
   };
 
@@ -314,13 +399,15 @@ export default function CarDetails() {
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">{car.name}</h1>
                 <p className="text-2xl font-bold text-indigo-600 mb-6">{car.price} <span className="text-sm text-gray-500 font-normal">per day</span></p>
 
-                <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Guest Rating</p>
-                    <RatingDisplay value={ratingValue} showValue valueClassName="font-semibold text-amber-800" />
+                {hasGuestRating ? (
+                  <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Guest Rating</p>
+                      <RatingDisplay value={ratingValue} showValue valueClassName="font-semibold text-amber-800" />
+                    </div>
+                    <p className="text-sm text-amber-800 font-medium">Based on {ratingCount} {ratingCount === 1 ? 'review' : 'reviews'}</p>
                   </div>
-                  <p className="text-sm text-amber-800 font-medium">Based on {ratingCount}+ reviews</p>
-                </div>
+                ) : null}
 
                 {car.location ? (
                   <p className="text-sm text-gray-500 mb-4">Location: {car.location}</p>
@@ -422,32 +509,42 @@ export default function CarDetails() {
                   </div>
                 ) : null}
 
-                <div className="mt-8 border border-gray-200 rounded-xl p-5">
-                  <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
-                  <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
-
-                  <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
-
-                  <textarea
-                    value={reviewText}
-                    onChange={(event) => {
-                      setReviewText(event.target.value);
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
-                    placeholder="Write a short review (optional)"
-                  />
-
-                  <div className="mt-4 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={handleSubmitReview}
-                      disabled={!userRating}
-                      className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      Submit Rating
-                    </button>
+                {reviewEligibilityLoading ? (
+                  <div className="mt-8 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+                    Checking review eligibility...
                   </div>
-                </div>
+                ) : canReview ? (
+                  <div className="mt-8 border border-gray-200 rounded-xl p-5">
+                    <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
+                    <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
+
+                    <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
+
+                    <textarea
+                      value={reviewText}
+                      onChange={(event) => {
+                        setReviewText(event.target.value);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
+                      placeholder="Write a short review (optional)"
+                    />
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSubmitReview}
+                        disabled={!userRating}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Submit Rating
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-8 border border-gray-200 rounded-xl p-5 text-sm text-gray-600">
+                    You can review this vehicle only after booking it.
+                  </div>
+                )}
               </div>
             </div>
           </section>

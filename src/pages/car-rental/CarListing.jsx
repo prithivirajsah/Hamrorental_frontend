@@ -1,13 +1,14 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import CarCard from './CarCard';
+import config from '../../config/config';
 
 const fallbackImage = 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400&h=250&fit=crop&auto=format';
 
 function toAbsoluteImage(url) {
 	if (!url) return fallbackImage;
 	if (url.startsWith('http://') || url.startsWith('https://')) return url;
-	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+	const apiBaseUrl = config.API_BASE_URL;
 	return `${apiBaseUrl}${url}`;
 }
 

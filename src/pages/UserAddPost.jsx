@@ -365,7 +365,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {form.existingImageUrls.map((url) => (
               <div key={url} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-100">
-                <img src={url.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}${url}` : url} alt="Existing" className="w-full h-full object-cover" />
+                <img src={url.startsWith('/') ? `${config.API_BASE_URL}${url}` : url} alt="Existing" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImage(url)}

@@ -49,8 +49,9 @@ export default function CarCard({ car }) {
   const hasMultipleImages = images.length > 1;
   const featureOne = car.features?.[0] || car.fuel || 'PB 95';
   const featureTwo = car.features?.[1] || 'Air Conditioner';
-  const ratingValue = Number(car.rating) || 4.6;
-  const ratingCount = Number(car.ratingCount) || 32;
+  const ratingValue = Number(car.rating ?? car.average_rating ?? car.avg_rating ?? 0);
+  const ratingCount = Number(car.ratingCount ?? car.rating_count ?? car.reviewCount ?? car.reviews_count ?? 0);
+  const hasRatings = ratingCount > 0;
 
   useEffect(() => {
     setLiked(isInWishlist(car.id));
@@ -142,10 +143,12 @@ export default function CarCard({ car }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <RatingDisplay value={ratingValue} size="sm" showValue valueClassName="font-medium" />
-          <span className="text-xs text-gray-500">{ratingCount}+ reviews</span>
-        </div>
+        {hasRatings ? (
+          <div className="flex items-center justify-between mb-4">
+            <RatingDisplay value={ratingValue} size="sm" showValue valueClassName="font-medium" />
+            <span className="text-xs text-gray-500">{ratingCount} {ratingCount === 1 ? 'review' : 'reviews'}</span>
+          </div>
+        ) : null}
 
         {/* Features */}
         <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">

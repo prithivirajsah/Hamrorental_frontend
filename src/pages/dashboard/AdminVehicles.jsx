@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminData } from '@/api/adminDataClient';
+import api from '@/api';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Plus, Search, Edit2, Trash2, Car } from 'lucide-react';
@@ -13,28 +13,31 @@ export default function AdminVehicles() {
   const queryClient = useQueryClient();
 
   const { data: vehicles = [], isLoading } = useQuery({
-    queryKey: ['vehicles'],
-    queryFn: () => adminData.entities.Vehicle.list('-created_date'),
+    queryKey: ['vehicles', 'admin', search, filter],
+    queryFn: async () => {
+      const ownerRole = filter === 'all' ? undefined : filter;
+      const data = await api.getAdminPosts({
+        limit: 300,
+        search: search || undefined,
+        owner_role: ownerRole,
+      });
+      return Array.isArray(data) ? data : [];
+    },
+    refetchInterval: 10000,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => adminData.entities.Vehicle.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vehicles'] }),
+    mutationFn: (id) => api.deletePost(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles', 'admin'] });
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      alert('Failed to delete vehicle: ' + (error?.response?.data?.detail || 'Unknown error'));
+    },
   });
 
-  const filtered = vehicles.filter(v => {
-    const matchSearch = v.name?.toLowerCase().includes(search.toLowerCase()) ||
-      v.brand?.toLowerCase().includes(search.toLowerCase()) ||
-      v.model?.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === 'all' || v.status === filter;
-    return matchSearch && matchFilter;
-  });
-
-  const statusConfig = {
-    available: 'bg-green-100 text-green-700',
-    unavailable: 'bg-red-100 text-red-700',
-    maintenance: 'bg-amber-100 text-amber-700',
-  };
+  const filtered = vehicles;
 
   return (
     <div className="p-6 space-y-6">
@@ -61,7 +64,7 @@ export default function AdminVehicles() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          {['all', 'available', 'unavailable', 'maintenance'].map(s => (
+          {['all', 'user', 'admin', 'driver'].map(s => (
             <button
               key={s}
               onClick={() => setFilter(s)}
@@ -77,7 +80,7 @@ export default function AdminVehicles() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-gray-400">Loading...</div>
+          <div className="p-12 text-center text-gray-400">Loading vehicles...</div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
             <Car className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -92,9 +95,9 @@ export default function AdminVehicles() {
               <thead className="bg-gray-50/70">
                 <tr>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Vehicle</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Owner</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Category</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Price/Day</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Location</th>
                   <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -104,26 +107,25 @@ export default function AdminVehicles() {
                   <tr key={vehicle.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {vehicle.images?.[0] ? (
-                          <img src={vehicle.images[0]} alt={vehicle.name} className="w-12 h-9 object-cover rounded-lg flex-shrink-0" />
+                        {vehicle.image_urls?.[0] ? (
+                          <img src={vehicle.image_urls[0]} alt={vehicle.post_title} className="w-12 h-9 object-cover rounded-lg flex-shrink-0" />
                         ) : (
                           <div className="w-12 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <Car className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{vehicle.name}</p>
-                          <p className="text-xs text-gray-400">{vehicle.brand} · {vehicle.year}</p>
+                          <p className="text-sm font-medium text-gray-900">{vehicle.post_title}</p>
+                          <p className="text-xs text-gray-400">ID: {vehicle.id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{vehicle.category || '—'}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">Rs. {vehicle.price_per_day}/day</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusConfig[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
-                        {vehicle.status}
-                      </span>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      <div className="font-medium text-gray-800">{vehicle.owner_name || `User #${vehicle.owner_id}`}</div>
+                      <div className="text-xs text-gray-500 capitalize">{vehicle.owner_role || 'user'}</div>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 capitalize">{vehicle.category || '—'}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">Rs. {vehicle.price_per_day}/day</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{vehicle.location || '—'}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
@@ -133,8 +135,13 @@ export default function AdminVehicles() {
                           </button>
                         </Link>
                         <button
-                          onClick={() => { if (window.confirm('Delete this vehicle?')) deleteMutation.mutate(vehicle.id); }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          onClick={() => { 
+                            if (window.confirm('Delete this vehicle? This action cannot be undone.')) {
+                              deleteMutation.mutate(vehicle.id);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
