@@ -19,6 +19,15 @@ const api = {
     }
   },
 
+  async registerDriver(data) {
+    try {
+      const response = await axiosInstance.post("/auth/register-driver", data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   async login(email, password) {
     // Backend expects form-encoded data for OAuth2 login
     const formData = new URLSearchParams();
@@ -41,8 +50,8 @@ const api = {
     // Extract role safely from backend response
     const role =
       response.data?.user?.role ||
-      response.data?.role ||               // backup
-      response.data?.user_role ||          // backup
+      response.data?.role ||               
+      response.data?.user_role ||         
       null;
 
     console.log("Logged-in role:", role);
@@ -62,9 +71,15 @@ const api = {
     return response.data;
   },
 
-  async googleAuth(idToken) {
-    const response = await axiosInstance.post("/auth/google", {
-      id_token: idToken,
+  async driverLogin(email, password) {
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
+
+    const response = await axiosInstance.post("/auth/driver-login", formData, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     });
 
     if (response.data.access_token) {
@@ -73,7 +88,6 @@ const api = {
 
     return response.data;
   },
-
 
   async getProfile() {
     const response = await axiosInstance.get("/users/me");

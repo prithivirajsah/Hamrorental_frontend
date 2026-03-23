@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, Check, X, AlertCircle } from 'lucide-react';
 import bgImage from '../assets/bg.png';
 import { toast } from 'react-toastify';
@@ -32,6 +32,9 @@ const useDebounce = (value, delay) => {
 };
 
 export default function Register() {
+  const [searchParams] = useSearchParams();
+  const initialAccountType = searchParams.get('role') === 'driver' ? 'driver' : 'user';
+  const [accountType, setAccountType] = useState(initialAccountType);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -55,7 +58,7 @@ export default function Register() {
     message: ''
   });
 
-  const { register } = useAuth();
+  const { register, registerDriver } = useAuth();
   const navigate = useNavigate();
 
   // Calculate password strength
@@ -213,7 +216,8 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      const result = await register({
+      const registerFn = accountType === 'driver' ? registerDriver : register;
+      const result = await registerFn({
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: password,
@@ -221,7 +225,11 @@ export default function Register() {
       });
 
       if (result.success) {
-        toast.success('Account created successfully! You can now log in.');
+        toast.success(
+          accountType === 'driver'
+            ? 'Driver account created successfully! You can now log in.'
+            : 'Account created successfully! You can now log in.'
+        );
         // Reset form
         setFullName('');
         setEmail('');
@@ -233,7 +241,7 @@ export default function Register() {
         setConfirmPasswordValidation({ isValidating: false, isValid: null, message: '' });
         // Redirect to login page after a short delay
         setTimeout(() => {
-          navigate('/login');
+          navigate(accountType === 'driver' ? '/login?mode=driver' : '/login');
         }, 2000);
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
@@ -268,8 +276,33 @@ export default function Register() {
         <div className="w-full max-w-md lg:max-w-lg backdrop-blur-sm bg-transparent rounded-[32px] shadow-2xl p-8 md:p-12 border border-white/10 transition-all duration-500 hover:border-white/20">
           {/* Title */}
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-8 flex items-center justify-center text-center">
-            Create your account
+            {accountType === 'driver' ? 'Create Driver Account' : 'Create your account'}
           </h1>
+
+          <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-white/20 p-1">
+            <button
+              type="button"
+              onClick={() => setAccountType('user')}
+              className={`h-10 rounded-lg text-sm font-semibold transition-all ${
+                accountType === 'user'
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              User Account
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType('driver')}
+              className={`h-10 rounded-lg text-sm font-semibold transition-all ${
+                accountType === 'driver'
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Driver Account
+            </button>
+          </div>
 
           {/* Registration Form */}
           <form onSubmit={handleRegister} className="space-y-5">

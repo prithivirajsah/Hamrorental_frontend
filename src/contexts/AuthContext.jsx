@@ -55,8 +55,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerDriver = async (userData) => {
+    try {
+      const response = await api.registerDriver(userData);
+      return { success: true, user: response };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Driver registration failed. Please try again.'
+      };
+    }
+  };
 
-  
   // Login Activity
   const login = async (email, password) => {
     try {
@@ -87,24 +97,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleAuth = async (idToken) => {
+  const loginDriver = async (email, password) => {
     try {
-      const response = await api.googleAuth(idToken);
+      const response = await api.driverLogin(email, password);
       if (response.access_token) {
         try {
           const userData = await refreshUser();
           return { success: true, user: userData };
         } catch (profileError) {
-          console.error('Failed to fetch profile after Google auth:', profileError);
+          console.error('Failed to fetch profile after driver login:', profileError);
           return { success: true, user: response.user };
         }
       }
       return { success: false, error: 'Invalid response from server' };
     } catch (error) {
-      console.error('Google auth error:', error);
+      console.error('Driver login error:', error);
       return {
         success: false,
-        error: error.response?.data?.detail || 'Google authentication failed.'
+        error: error.response?.data?.detail || 'Driver login failed. Please check your credentials.'
       };
     }
   };
@@ -121,8 +131,9 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     register,
+    registerDriver,
     login,
-    googleAuth,
+    loginDriver,
     logout,
     isAuthenticated,
     refreshUser,

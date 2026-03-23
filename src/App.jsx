@@ -35,6 +35,11 @@ import AdminBookings from './pages/dashboard/AdminBookings';
 import AdminUsers from './pages/dashboard/AdminUsers';
 import AdminDocuments from './pages/dashboard/AdminDocuments';
 import AddPost from './pages/dashboard/AddPost';
+import DriverLayout from './DriverLayout';
+import DriverDashboard from './pages/driver/DriverDashboard';
+import DriverRequests from './pages/driver/DriverRequests';
+import DriverVehicles from './pages/driver/DriverVehicles';
+import DriverAddPost from './pages/driver/DriverAddPost';
 
 
 
@@ -146,13 +151,34 @@ function App() {
             }
           />
 
-          <Route path="/admin" element={<Layout />}>
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="vehicles" element={<AdminVehicles />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="documents" element={<AdminDocuments />} />
             <Route path="add-post" element={<AddPost />} />
+          </Route>
+
+          <Route
+            path="/driver"
+            element={
+              <ProtectedRoute allowedRoles={["driver"]}>
+                <DriverLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DriverDashboard />} />
+            <Route path="requests" element={<DriverRequests />} />
+            <Route path="vehicles" element={<DriverVehicles />} />
+            <Route path="add-post" element={<DriverAddPost />} />
           </Route>
 
         </Routes>

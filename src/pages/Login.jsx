@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
 import bgImage from '../assets/bg.png';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const initialLoginMode = searchParams.get('mode') === 'driver' ? 'driver' : 'user';
+  const [loginMode, setLoginMode] = useState(initialLoginMode);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +16,7 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginDriver } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -32,10 +35,11 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const result = await login(email.trim().toLowerCase(), password);
+      const authFn = loginMode === 'driver' ? loginDriver : login;
+      const result = await authFn(email.trim().toLowerCase(), password);
 
       if (result.success) {
-        toast.success('Login successful!');
+        toast.success(loginMode === 'driver' ? 'Driver login successful!' : 'Login successful!');
         setTimeout(() => {
           const role = result.user?.role;
           if (role === "admin") {
@@ -79,6 +83,31 @@ export default function Login() {
             Log In
           </h1>
 
+          <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl border border-white/20 p-1">
+            <button
+              type="button"
+              onClick={() => setLoginMode('user')}
+              className={`h-10 rounded-lg text-sm font-semibold transition-all ${
+                loginMode === 'user'
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              User Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginMode('driver')}
+              className={`h-10 rounded-lg text-sm font-semibold transition-all ${
+                loginMode === 'driver'
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Driver Login
+            </button>
+          </div>
+
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Input */}
@@ -90,7 +119,7 @@ export default function Login() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="Your Email"
+                  placeholder={loginMode === 'driver' ? 'Driver Email' : 'Your Email'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full h-14 bg-transparent text-white placeholder:text-gray-400 border-b border-white/40 focus:border-white/90 pl-10 pr-4 outline-none transition-all duration-300"
@@ -149,8 +178,21 @@ export default function Login() {
                   : 'bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 hover:shadow-xl transform hover:scale-[1.02]'
               } text-white`}
             >
-              {isLoading ? 'Logging in...' : 'Log In'}
+              {isLoading
+                ? (loginMode === 'driver' ? 'Logging in driver...' : 'Logging in...')
+                : (loginMode === 'driver' ? 'Driver Log In' : 'Log In')}
             </button>
+
+            {loginMode === 'driver' && (
+              <div className="text-center">
+                <Link
+                  to="/register?role=driver"
+                  className="text-blue-400 hover:text-blue-300 font-semibold text-sm transition-colors duration-300"
+                >
+                  Create Driver Account
+                </Link>
+              </div>
+            )}
           </form>
 
           {/* Sign Up Link */}

@@ -1,37 +1,38 @@
 import React, { useMemo, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Car, Users, CalendarDays, Plus, Menu, X, LogOut, Shield,
-  FileCheck,
+  LayoutDashboard,
+  Car,
+  Bell,
+  Plus,
+  Menu,
+  X,
+  LogOut,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import HeaderIcon from './assets/Headericon.png';
 
 const pageMetaByPath = {
-  '/admin': { name: 'Dashboard', key: 'AdminDashboard' },
-  '/admin/vehicles': { name: 'Vehicles', key: 'AdminVehicles' },
-  '/admin/bookings': { name: 'Bookings', key: 'AdminBookings' },
-  '/admin/users': { name: 'Users', key: 'AdminUsers' },
-  '/admin/documents': { name: 'Documents', key: 'AdminDocuments' },
-  '/admin/add-post': { name: 'Add Post', key: 'AddPost' },
+  '/driver': { name: 'Dashboard', key: 'DriverDashboard' },
+  '/driver/requests': { name: 'Hire Requests', key: 'DriverRequests' },
+  '/driver/vehicles': { name: 'My Cars', key: 'DriverVehicles' },
+  '/driver/add-post': { name: 'Add Car', key: 'DriverAddPost' },
 };
 
 const navItems = [
-  { name: 'Dashboard', to: '/admin', key: 'AdminDashboard', icon: LayoutDashboard },
-  { name: 'Vehicles', to: '/admin/vehicles', key: 'AdminVehicles', icon: Car },
-  { name: 'Bookings', to: '/admin/bookings', key: 'AdminBookings', icon: CalendarDays },
-  { name: 'Users', to: '/admin/users', key: 'AdminUsers', icon: Users },
-  { name: 'Documents', to: '/admin/documents', key: 'AdminDocuments', icon: FileCheck },
+  { name: 'Dashboard', to: '/driver', key: 'DriverDashboard', icon: LayoutDashboard },
+  { name: 'Hire Requests', to: '/driver/requests', key: 'DriverRequests', icon: Bell },
+  { name: 'My Cars', to: '/driver/vehicles', key: 'DriverVehicles', icon: Car },
 ];
 
-export default function Layout() {
+export default function DriverLayout() {
   const location = useLocation();
-  const { 
-    user, loading, isAuthenticated, logout } = useAuth();
+  const { user, loading, isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const currentPage = useMemo(
-    () => pageMetaByPath[location.pathname] || { name: 'Dashboard', key: 'AdminDashboard' },
+    () => pageMetaByPath[location.pathname] || { name: 'Dashboard', key: 'DriverDashboard' },
     [location.pathname]
   );
 
@@ -47,13 +48,13 @@ export default function Layout() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user && user.role !== 'admin') {
+  if (user && user.role !== 'driver') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-8">
           <Shield className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800">Access Denied</h1>
-          <p className="text-gray-500 mt-2">You need admin privileges to access this area.</p>
+          <p className="text-gray-500 mt-2">You need driver privileges to access this area.</p>
           <Link to="/" className="mt-4 inline-block text-indigo-600 hover:underline text-sm">
             Go back home
           </Link>
@@ -101,16 +102,16 @@ export default function Layout() {
 
           <div className="pt-3 mt-2 border-t border-gray-100">
             <Link
-              to="/admin/add-post"
+              to="/driver/add-post"
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                currentPage.key === 'AddPost'
+                currentPage.key === 'DriverAddPost'
                   ? 'bg-indigo-700 text-white'
                   : 'bg-indigo-600 text-white hover:bg-indigo-700'
               }`}
             >
               <Plus className="w-4 h-4" />
-              Add New Vehicle
+              Add My Car
             </Link>
           </div>
         </nav>
@@ -119,10 +120,10 @@ export default function Layout() {
           <div className="p-4 border-t border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-white">{user.full_name?.[0]?.toUpperCase() || 'A'}</span>
+                <span className="text-sm font-semibold text-white">{user.full_name?.[0]?.toUpperCase() || 'D'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Admin'}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Driver'}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
               <button

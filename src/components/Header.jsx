@@ -43,6 +43,10 @@ export default function Header() {
       navigate('/admin/add-post');
       return;
     }
+    if (user?.role === 'driver') {
+      navigate('/driver/add-post');
+      return;
+    }
     setShowAddPostPopup(true);
     setShowProfilePopup(false);
   };
@@ -181,32 +185,65 @@ export default function Header() {
                           <span>My Profile</span>
                         </Link>
 
-                        <Link 
-                          to="/user/orders" 
-                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setShowProfilePopup(false)}
-                        >
-                          <IoReorderThreeSharp  className="w-5 h-5" />
-                          <span>My Orders</span>
-                        </Link>
+                        {user?.role === 'driver' ? (
+                          <>
+                            <Link 
+                              to="/driver" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <IoReorderThreeSharp  className="w-5 h-5" />
+                              <span>Driver Dashboard</span>
+                            </Link>
 
-                        <Link 
-                          to="/user/reviews" 
-                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setShowProfilePopup(false)}
-                        >
-                          <MdOutlineReviews className="w-5 h-5" />
-                          <span>My Reviews</span>
-                        </Link>
+                            <Link 
+                              to="/driver/requests" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <MdOutlineReviews className="w-5 h-5" />
+                              <span>Hire Requests</span>
+                            </Link>
 
-                        <Link 
-                          to="/wishlist" 
-                          className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setShowProfilePopup(false)}
-                        >
-                          <Heart className="w-5 h-5" />
-                          <span>Wishlist</span>
-                        </Link>
+                            <Link 
+                              to="/driver/vehicles" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <Heart className="w-5 h-5" />
+                              <span>My Cars</span>
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link 
+                              to="/user/orders" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <IoReorderThreeSharp  className="w-5 h-5" />
+                              <span>My Orders</span>
+                            </Link>
+
+                            <Link 
+                              to="/user/reviews" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <MdOutlineReviews className="w-5 h-5" />
+                              <span>My Reviews</span>
+                            </Link>
+
+                            <Link 
+                              to="/wishlist" 
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <Heart className="w-5 h-5" />
+                              <span>Wishlist</span>
+                            </Link>
+                          </>
+                        )}
                         
                         <button 
                           onClick={handleLogout}
