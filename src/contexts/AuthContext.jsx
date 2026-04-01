@@ -15,6 +15,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const parseErrorMessage = (error, fallbackMessage) => {
+    const detail = error?.response?.data?.detail;
+    if (typeof detail === 'string' && detail.trim()) return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0];
+      if (typeof first === 'string' && first.trim()) return first;
+      if (first?.msg) return first.msg;
+    }
+    return fallbackMessage;
+  };
+
   const refreshUser = async () => {
     const userData = await api.getProfile();
     setUser(userData);
@@ -50,7 +61,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Registration error:', error);
       return {
         success: false,
-        error: error.response?.data?.detail || 'Registration failed. Please try again.'
+        error: parseErrorMessage(error, 'Registration failed. Please try again.')
       };
     }
   };
@@ -62,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Driver registration failed. Please try again.'
+        error: parseErrorMessage(error, 'Driver registration failed. Please try again.')
       };
     }
   };

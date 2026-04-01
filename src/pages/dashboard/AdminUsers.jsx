@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { adminData } from '@/api/adminDataClient';
+import api from '@/api';
 import { Users, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -17,14 +17,11 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => adminData.entities.User.list(),
+    queryKey: ['admin-users', search],
+    queryFn: () => api.getAdminUsers({ search: search || undefined, limit: 500 }),
   });
 
-  const filtered = users.filter(u =>
-    u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users;
 
   const adminCount = users.filter(u => u.role === 'admin').length;
   const userCount = users.filter(u => u.role !== 'admin').length;
@@ -102,7 +99,7 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(user.created_date)}
+                      {formatDate(user.created_at)}
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Lock, Check, X, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, Check, X, AlertCircle, FileText, Calendar } from 'lucide-react';
 import bgImage from '../assets/bg.png';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,6 +43,12 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Driver license fields
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [licenseExpiry, setLicenseExpiry] = useState('');
+  const [licenseFile, setLicenseFile] = useState(null);
+  const [licenseFileName, setLicenseFileName] = useState('');
   
   // Password validation states
   const [passwordValidation, setPasswordValidation] = useState({
@@ -212,39 +218,106 @@ export default function Register() {
       toast.error('Please agree to the Terms and Privacy Policies');
       return;
     }
+    
+    // Driver-specific validations
+    if (accountType === 'driver') {
+      if (!licenseNumber.trim()) {
+        toast.error('Please enter your driver license number');
+        return;
+      }
+      
+      if (!licenseExpiry) {
+        toast.error('Please enter your driver license expiry date');
+        return;
+      }
+      
+      if (!licenseFile) {
+        toast.error('Please upload your driver license document');
+        return;
+      }
+      
+      // Validate expiry date is in future
+      const expiryDate = new Date(licenseExpiry);
+      if (expiryDate < new Date()) {
+        toast.error('Driver license expiry date must be in the future');
+        return;
+      }
+    }
 
     setIsLoading(true);
     
     try {
       const registerFn = accountType === 'driver' ? registerDriver : register;
-      const result = await registerFn({
+      const registrationData = {
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: password,
         confirm_password: confirmPassword
-      });
+      };
+      
+      // Add driver-specific data if registering as driver
+      if (accountType === 'driver') {
+        const formData = new FormData();
+        formData.append('full_name', fullName.trim());
+        formData.append('email', email.trim().toLowerCase());
+        formData.append('password', password);
+        formData.append('confirm_password', confirmPassword);
+        formData.append('license_number', licenseNumber.trim());
+        formData.append('license_expiry', licenseExpiry);
+        formData.append('license_document', licenseFile);
+        
+        const result = await registerFn(formData);
 
-      if (result.success) {
-        toast.success(
-          accountType === 'driver'
-            ? 'Driver account created successfully! You can now log in.'
-            : 'Account created successfully! You can now log in.'
-        );
-        // Reset form
-        setFullName('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setAgreeToTerms(false);
-        // Reset validation states
-        setPasswordValidation({ isValidating: false, isValid: null, errors: [], suggestions: [] });
-        setConfirmPasswordValidation({ isValidating: false, isValid: null, message: '' });
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          navigate(accountType === 'driver' ? '/login?mode=driver' : '/login');
-        }, 2000);
+        if (result.success) {
+          toast.success(
+            accountType === 'driver'
+              ? 'Driver account created successfully! Your license is under verification. You can now log in.'
+              : 'Account created successfully! You can now log in.'
+          );
+          // Reset form
+          setFullName('');
+          setEmail('');
+          setPassword('');
+          setConfirmPassword('');
+          setAgreeToTerms(false);
+          setLicenseNumber('');
+          setLicenseExpiry('');
+          setLicenseFile(null);
+          setLicenseFileName('');
+          // Reset validation states
+          setPasswordValidation({ isValidating: false, isValid: null, errors: [], suggestions: [] });
+          setConfirmPasswordValidation({ isValidating: false, isValid: null, message: '' });
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            navigate(accountType === 'driver' ? '/login' : '/login');
+          }, 2000);
+        } else {
+          toast.error(result.error || 'Registration failed. Please try again.');
+        }
       } else {
-        toast.error(result.error || 'Registration failed. Please try again.');
+        const result = await registerFn(registrationData);
+        if (result.success) {
+          toast.success(
+            accountType === 'driver'
+              ? 'Driver account created successfully! You can now log in.'
+              : 'Account created successfully! You can now log in.'
+          );
+          // Reset form
+          setFullName('');
+          setEmail('');
+          setPassword('');
+          setConfirmPassword('');
+          setAgreeToTerms(false);
+          // Reset validation states
+          setPasswordValidation({ isValidating: false, isValid: null, errors: [], suggestions: [] });
+          setConfirmPasswordValidation({ isValidating: false, isValid: null, message: '' });
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            navigate(accountType === 'driver' ? '/login' : '/login');
+          }, 2000);
+        } else {
+          toast.error(result.error || 'Registration failed. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -440,6 +513,81 @@ export default function Register() {
                   <p className="text-red-400">Passwords do not match</p>
                 )}
               </div>
+            )}
+            
+            {/* Driver-specific fields */}
+            {accountType === 'driver' && (
+              <>
+                <div className="pt-2 border-t border-gray-600 space-y-4">
+                  <h3 className="text-sm font-semibold text-white">Driver License Verification</h3>
+                  
+                  {/* License Number */}
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Driver License Number"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      className="w-full h-12 bg-transparent text-white placeholder:text-gray-400 border-b border-gray-500 focus:border-white pl-12 pr-4 transition-all duration-300 outline-none"
+                      required
+                    />
+                  </div>
+                  
+                  {/* License Expiry Date */}
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="date"
+                      placeholder="License Expiry Date"
+                      value={licenseExpiry}
+                      onChange={(e) => setLicenseExpiry(e.target.value)}
+                      className="w-full h-12 bg-transparent text-white placeholder:text-gray-400 border-b border-gray-500 focus:border-white pl-12 pr-4 transition-all duration-300 outline-none"
+                      required
+                    />
+                  </div>
+                  
+                  {/* License Document Upload */}
+                  <div className="relative">
+                    <label className="block text-sm text-gray-300 mb-2">Upload License Document (PDF, JPG, PNG)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const maxSize = 5 * 1024 * 1024; // 5MB
+                          
+                          if (file.size > maxSize) {
+                            toast.error('File size must be less than 5MB');
+                            return;
+                          }
+                          
+                          setLicenseFile(file);
+                          setLicenseFileName(file.name);
+                        }
+                      }}
+                      className="hidden"
+                      id="license-upload"
+                      required
+                    />
+                    <label
+                      htmlFor="license-upload"
+                      className="w-full h-12 flex items-center justify-center bg-transparent border-2 border-dashed border-gray-500 hover:border-white rounded-lg cursor-pointer transition-all duration-300 text-gray-300 hover:text-white"
+                    >
+                      {licenseFileName ? (
+                        <span className="text-sm">{licenseFileName}</span>
+                      ) : (
+                        <span className="text-sm">Click to upload license document</span>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Terms and Policies Checkbox */}

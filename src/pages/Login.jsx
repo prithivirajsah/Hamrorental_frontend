@@ -39,17 +39,13 @@ export default function Login() {
       const result = await authFn(email.trim().toLowerCase(), password);
 
       if (result.success) {
-        toast.success(loginMode === 'driver' ? 'Driver login successful!' : 'Login successful!');
-        setTimeout(() => {
-          const role = result.user?.role;
-          if (role === "admin") {
-            navigate('/admin')
-          } else if (role === "driver") {
-            navigate('/driver')
-          } else {
-            navigate('/')
-          }
-        }, 1000);
+        const role = result.user?.role;
+        const nextRoute = role === 'admin' ? '/admin' : role === 'driver' ? '/driver' : '/';
+
+        toast.success(loginMode === 'driver' ? 'Driver login successful!' : 'Login successful!', {
+          onClose: () => navigate(nextRoute),
+          autoClose: 1000,
+        });
       } else {
         toast.error(result.error || 'Login failed. Please check your credentials.');
       }
@@ -189,7 +185,6 @@ export default function Login() {
                   to="/register?role=driver"
                   className="text-blue-400 hover:text-blue-300 font-semibold text-sm transition-colors duration-300"
                 >
-                  Create Driver Account
                 </Link>
               </div>
             )}

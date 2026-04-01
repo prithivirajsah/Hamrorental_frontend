@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Car,
   Bell,
+  User,
   Plus,
   Menu,
   X,
@@ -12,11 +13,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import HeaderIcon from './assets/Headericon.png';
+import { config } from './config/config';
 
 const pageMetaByPath = {
   '/driver': { name: 'Dashboard', key: 'DriverDashboard' },
   '/driver/requests': { name: 'Hire Requests', key: 'DriverRequests' },
   '/driver/vehicles': { name: 'My Cars', key: 'DriverVehicles' },
+  '/driver/profile': { name: 'Profile', key: 'DriverProfile' },
   '/driver/add-post': { name: 'Add Car', key: 'DriverAddPost' },
 };
 
@@ -24,6 +27,7 @@ const navItems = [
   { name: 'Dashboard', to: '/driver', key: 'DriverDashboard', icon: LayoutDashboard },
   { name: 'Hire Requests', to: '/driver/requests', key: 'DriverRequests', icon: Bell },
   { name: 'My Cars', to: '/driver/vehicles', key: 'DriverVehicles', icon: Car },
+  { name: 'Profile', to: '/driver/profile', key: 'DriverProfile', icon: User },
 ];
 
 export default function DriverLayout() {
@@ -35,6 +39,12 @@ export default function DriverLayout() {
     () => pageMetaByPath[location.pathname] || { name: 'Dashboard', key: 'DriverDashboard' },
     [location.pathname]
   );
+
+  const resolveAssetUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${config.API_BASE_URL}${url}`;
+  };
 
   if (loading) {
     return (
@@ -119,13 +129,23 @@ export default function DriverLayout() {
         {user && (
           <div className="p-4 border-t border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-white">{user.full_name?.[0]?.toUpperCase() || 'D'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Driver'}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-              </div>
+              <Link to="/driver/profile" className="flex items-center gap-3 flex-1 min-w-0 hover:bg-gray-50 rounded-lg p-1 -m-1 transition-colors">
+                <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {user.profile_image_url ? (
+                    <img
+                      src={resolveAssetUrl(user.profile_image_url)}
+                      alt={user.full_name || 'Driver'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-white">{user.full_name?.[0]?.toUpperCase() || 'D'}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Driver'}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+              </Link>
               <button
                 onClick={logout}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Users, CalendarDays, Plus, Menu, X, LogOut, Shield,
-  FileCheck,
+  FileCheck, Mail,
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import HeaderIcon from './assets/Headericon.png';
@@ -12,7 +12,9 @@ const pageMetaByPath = {
   '/admin/vehicles': { name: 'Vehicles', key: 'AdminVehicles' },
   '/admin/bookings': { name: 'Bookings', key: 'AdminBookings' },
   '/admin/users': { name: 'Users', key: 'AdminUsers' },
-  '/admin/documents': { name: 'Documents', key: 'AdminDocuments' },
+  '/admin/messages': { name: 'Messages', key: 'AdminMessages' },
+  '/admin/documents': { name: 'User Documents', key: 'AdminDocuments' },
+  '/admin/driver-licenses': { name: 'Driver Document', key: 'AdminDriverLicenses' },
   '/admin/add-post': { name: 'Add Post', key: 'AddPost' },
 };
 
@@ -21,7 +23,9 @@ const navItems = [
   { name: 'Vehicles', to: '/admin/vehicles', key: 'AdminVehicles', icon: Car },
   { name: 'Bookings', to: '/admin/bookings', key: 'AdminBookings', icon: CalendarDays },
   { name: 'Users', to: '/admin/users', key: 'AdminUsers', icon: Users },
-  { name: 'Documents', to: '/admin/documents', key: 'AdminDocuments', icon: FileCheck },
+  { name: 'Messages', to: '/admin/messages', key: 'AdminMessages', icon: Mail },
+  { name: 'User Documents', to: '/admin/documents', key: 'AdminDocuments', icon: FileCheck },
+  { name: 'Driver Document', to: '/admin/driver-licenses', key: 'AdminDriverLicenses', icon: FileCheck },
 ];
 
 export default function Layout() {

@@ -15,13 +15,13 @@ const formatDate = (value) => {
   });
 };
 
-export default function AdminDocuments() {
+export default function AdminDriverLicenseVerification() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
-  const queryClient = useQueryClient();
 
   const resolveAssetUrl = (url) => {
     if (!url) return null;
@@ -29,69 +29,73 @@ export default function AdminDocuments() {
     return `${config.API_BASE_URL}${url}`;
   };
 
-  const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['documents', search],
-    queryFn: () => api.getAdminKycDocuments({
-      search: search || undefined,
-      limit: 300,
-    }),
+  const { data: licenses = [], isLoading } = useQuery({
+    queryKey: ['driver-licenses'],
+    queryFn: () => api.getAllDriverLicenses({ limit: 300 }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.updateAdminKycStatus(id, data),
+    mutationFn: ({ id, action, rejection_reason }) => api.verifyDriverLicense(id, action, rejection_reason),
     onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-licenses'] });
       if (selected?.id === vars.id) {
-        setSelected(prev => prev ? ({ ...prev, verification_status: vars.data.status, rejection_reason: vars.data.rejection_reason || null }) : null);
+        setSelected((prev) => prev ? ({ ...prev, verification_status: vars.action === 'verify' ? 'verified' : 'rejected', rejection_reason: vars.rejection_reason || null }) : null);
       }
       setShowRejectInput(false);
       setRejectionReason('');
     },
   });
 
-  const filtered = documents.filter(d => {
+  const filtered = licenses.filter((item) => {
+    const q = search.toLowerCase();
     const matchSearch =
-      d.user_name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.user_email?.toLowerCase().includes(search.toLowerCase()) ||
-      d.document_type?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || d.verification_status === statusFilter;
+      item.user_name?.toLowerCase().includes(q)
+      || item.user_email?.toLowerCase().includes(q)
+      || item.license_number?.toLowerCase().includes(q);
+    const matchStatus = statusFilter === 'all' || item.verification_status === statusFilter;
     return matchSearch && matchStatus;
   });
 
   const counts = {
-    all: documents.length,
-    pending: documents.filter(d => d.verification_status === 'pending').length,
-    approved: documents.filter(d => d.verification_status === 'approved').length,
-    rejected: documents.filter(d => d.verification_status === 'rejected').length,
+    all: licenses.length,
+    pending: licenses.filter((item) => item.verification_status === 'pending').length,
+    verified: licenses.filter((item) => item.verification_status === 'verified').length,
+    rejected: licenses.filter((item) => item.verification_status === 'rejected').length,
   };
 
   const statusConfig = {
     pending: { color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-    approved: { color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
+    verified: { color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
     rejected: { color: 'bg-red-100 text-red-700', icon: XCircle },
   };
 
-  const handleApprove = (doc) => {
-    updateMutation.mutate({ id: doc.id, data: { status: 'approved' } });
+  const handleApprove = (item) => {
+    updateMutation.mutate({ id: item.id, action: 'verify' });
   };
 
-  const handleReject = (doc) => {
-    updateMutation.mutate({ id: doc.id, data: { status: 'rejected', rejection_reason: rejectionReason } });
+  const handleReject = (item) => {
+    updateMutation.mutate({ id: item.id, action: 'reject', rejection_reason: rejectionReason });
+  };
+
+  const handleRejectSubmit = (item) => {
+    if (!rejectionReason.trim()) {
+      return;
+    }
+    handleReject(item);
   };
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">User Document Verification</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Driver Licenses</h1>
         <p className="text-sm text-gray-500">{counts.pending} pending review</p>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Total', key: 'all', color: 'text-gray-900' },
           { label: 'Pending', key: 'pending', color: 'text-yellow-600' },
-          { label: 'Approved', key: 'approved', color: 'text-green-600' },
+          { label: 'Verified', key: 'verified', color: 'text-green-600' },
           { label: 'Rejected', key: 'rejected', color: 'text-red-500' },
         ].map(({ label, key, color }) => (
           <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -101,59 +105,62 @@ export default function AdminDocuments() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input placeholder="Search by name, email, or type..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input
+            placeholder="Search by name, email, or license..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
         <div className="flex flex-wrap gap-2">
-          {['all', 'pending', 'approved', 'rejected'].map(s => (
+          {['all', 'pending', 'verified', 'rejected'].map((itemStatus) => (
             <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${statusFilter === s ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+              key={itemStatus}
+              onClick={() => setStatusFilter(itemStatus)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${statusFilter === itemStatus ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
             >
-              {s} <span className="ml-1 text-xs opacity-70">({counts[s]})</span>
+              {itemStatus} <span className="ml-1 text-xs opacity-70">({counts[itemStatus]})</span>
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* List */}
         <div className={`${selected ? 'lg:col-span-2' : 'lg:col-span-5'} bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden`}>
           {isLoading ? (
             <div className="p-12 text-center text-gray-400">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
               <FileCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No documents found</p>
+              <p className="text-gray-500">No licenses found</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
-              {filtered.map(doc => {
-                const cfg = statusConfig[doc.verification_status] || statusConfig.pending;
+              {filtered.map((item) => {
+                const cfg = statusConfig[item.verification_status] || statusConfig.pending;
                 const Icon = cfg.icon;
                 return (
                   <div
-                    key={doc.id}
-                    onClick={() => setSelected(doc)}
-                    className={`flex items-center gap-4 px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${selected?.id === doc.id ? 'bg-indigo-50/60' : ''}`}
+                    key={item.id}
+                    onClick={() => setSelected(item)}
+                    className={`flex items-center gap-4 px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${selected?.id === item.id ? 'bg-indigo-50/60' : ''}`}
                   >
                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-semibold text-white">
-                        {doc.user_name?.[0]?.toUpperCase() || doc.user_email?.[0]?.toUpperCase() || '?'}
+                        {item.user_name?.[0]?.toUpperCase() || item.user_email?.[0]?.toUpperCase() || '?'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{doc.user_name || 'Unknown User'}</p>
-                      <p className="text-xs text-gray-400 truncate">{doc.document_type}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{item.user_name || 'Unknown User'}</p>
+                      <p className="text-xs text-gray-400 truncate">{item.license_number}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
                         <Icon className="w-3 h-3" />
-                        {doc.verification_status}
+                        {item.verification_status}
                       </span>
                       <Eye className="w-4 h-4 text-gray-300" />
                     </div>
@@ -164,17 +171,16 @@ export default function AdminDocuments() {
           )}
         </div>
 
-        {/* Detail Panel */}
         {selected && (
           <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Document Details</h2>
+              <h2 className="font-semibold text-gray-900">Driver License Details</h2>
               <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
+
             <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
-              {/* User Info */}
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center">
                   <span className="text-lg font-bold text-white">{selected.user_name?.[0]?.toUpperCase() || '?'}</span>
@@ -187,18 +193,16 @@ export default function AdminDocuments() {
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-0.5">Document Type</p>
-                  <p className="font-medium text-gray-800">{selected.document_type}</p>
+                  <p className="text-xs text-gray-400 mb-0.5">License Number</p>
+                  <p className="font-medium text-gray-800">{selected.license_number || '—'}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-0.5">Document Number</p>
-                  <p className="font-medium text-gray-800">{selected.document_number || '—'}</p>
+                  <p className="text-xs text-gray-400 mb-0.5">Expiry Date</p>
+                  <p className="font-medium text-gray-800">{selected.license_expiry_date || '—'}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs text-gray-400 mb-0.5">Submitted</p>
-                  <p className="font-medium text-gray-800">
-                    {formatDate(selected.created_at)}
-                  </p>
+                  <p className="font-medium text-gray-800">{formatDate(selected.created_at)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs text-gray-400 mb-0.5">Status</p>
@@ -208,30 +212,19 @@ export default function AdminDocuments() {
                 </div>
               </div>
 
-              {/* Document Images */}
               <div className="space-y-3">
-                <p className="text-sm font-semibold text-gray-700">Uploaded Documents</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {selected.front_image_url && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1">Front Side</p>
-                      <a href={resolveAssetUrl(selected.front_image_url)} target="_blank" rel="noopener noreferrer">
-                        <img src={resolveAssetUrl(selected.front_image_url)} alt="Front" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
-                      </a>
-                    </div>
-                  )}
-                  {selected.back_image_url && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1">Back Side</p>
-                      <a href={resolveAssetUrl(selected.back_image_url)} target="_blank" rel="noopener noreferrer">
-                        <img src={resolveAssetUrl(selected.back_image_url)} alt="Back" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
-                      </a>
-                    </div>
-                  )}
-                  {!selected.front_image_url && !selected.back_image_url && (
-                    <div className="sm:col-span-2 py-6 text-center text-gray-400 text-sm bg-gray-50 rounded-xl">No images uploaded</div>
-                  )}
-                </div>
+                <p className="text-sm font-semibold text-gray-700">Uploaded License</p>
+                {selected.license_image_url ? (
+                  <a href={resolveAssetUrl(selected.license_image_url)} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={resolveAssetUrl(selected.license_image_url)}
+                      alt="License"
+                      className="w-full h-52 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                ) : (
+                  <div className="py-6 text-center text-gray-400 text-sm bg-gray-50 rounded-xl">No image uploaded</div>
+                )}
               </div>
 
               {selected.rejection_reason && (
@@ -241,14 +234,6 @@ export default function AdminDocuments() {
                 </div>
               )}
 
-              {selected.notes && (
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs font-medium text-gray-500 mb-0.5">Notes</p>
-                  <p className="text-sm text-gray-700">{selected.notes}</p>
-                </div>
-              )}
-
-              {/* Actions */}
               {selected.verification_status === 'pending' && (
                 <div className="pt-2 border-t border-gray-100 space-y-3">
                   {showRejectInput ? (
@@ -256,12 +241,12 @@ export default function AdminDocuments() {
                       <Input
                         placeholder="Reason for rejection..."
                         value={rejectionReason}
-                        onChange={e => setRejectionReason(e.target.value)}
+                        onChange={(e) => setRejectionReason(e.target.value)}
                       />
                       <div className="flex gap-2">
                         <Button
                           className="flex-1 bg-red-500 hover:bg-red-600"
-                          onClick={() => handleReject(selected)}
+                          onClick={() => handleRejectSubmit(selected)}
                           disabled={updateMutation.isPending}
                         >
                           Confirm Reject
@@ -287,19 +272,6 @@ export default function AdminDocuments() {
                       </Button>
                     </div>
                   )}
-                </div>
-              )}
-
-              {selected.verification_status !== 'pending' && (
-                <div className="pt-2 border-t border-gray-100">
-                  <Button
-                    variant="outline"
-                    className="w-full text-yellow-600 border-yellow-200 hover:bg-yellow-50"
-                    onClick={() => updateMutation.mutate({ id: selected.id, data: { status: 'pending' } })}
-                    disabled={updateMutation.isPending}
-                  >
-                    Reset to Pending
-                  </Button>
                 </div>
               )}
             </div>

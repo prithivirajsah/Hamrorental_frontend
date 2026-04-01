@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../api.js';
 import { handleApiError, handleApiSuccess } from '../utils/apiUtils';
 import { toast } from 'react-toastify';
-import { adminData } from '../api/adminDataClient';
 import UserAddPost from './UserAddPost';
 import { config } from '../config/config';
 
@@ -37,7 +36,6 @@ export default function Profile() {
     document_type: 'National ID',
     document_number: '',
     front_file: null,
-    back_file: null,
   });
   const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
@@ -117,16 +115,9 @@ export default function Profile() {
 
   useEffect(() => {
     const loadKycStatus = async () => {
-      if (!user?.email) return;
+      if (!user) return;
       try {
-        const docs = await adminData.entities.Document.filter({ user_email: user.email });
-        if (!docs.length) {
-          setKycStatus('pending');
-          return;
-        }
-        const latestDoc = docs
-          .slice()
-          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        const latestDoc = await api.getMyKycDocument();
         if (latestDoc?.verification_status === 'approved') {
           setKycStatus('verified');
         } else if (latestDoc?.verification_status === 'rejected') {
@@ -135,12 +126,16 @@ export default function Profile() {
           setKycStatus('pending');
         }
       } catch (error) {
+        if (error?.response?.status === 404) {
+          setKycStatus('pending');
+          return;
+        }
         setKycStatus('pending');
       }
     };
 
     loadKycStatus();
-  }, [user?.email]);
+  }, [user]);
 
   const tabs = [
     { id: 'details', name: 'My Details', icon: User },
@@ -242,7 +237,7 @@ export default function Profile() {
   };
 
   const handleKycSubmit = async () => {
-    if (!user?.email) {
+    if (!user) {
       toast.error('Please log in to submit documents');
       return;
     }
@@ -252,34 +247,25 @@ export default function Profile() {
       return;
     }
 
-    if (!kycDocuments.front_file || !kycDocuments.back_file) {
-      toast.error('Please upload front and back documents');
+    if (!kycDocuments.front_file) {
+      toast.error('Please upload front document image');
       return;
     }
 
     setIsSubmittingKyc(true);
     try {
-      const [frontUpload, backUpload] = await Promise.all([
-        adminData.integrations.Core.UploadFile({ file: kycDocuments.front_file }),
-        adminData.integrations.Core.UploadFile({ file: kycDocuments.back_file }),
-      ]);
+      const form = new FormData();
+      form.append('document_type', kycDocuments.document_type);
+      form.append('document_number', kycDocuments.document_number.trim());
+      form.append('front_file', kycDocuments.front_file);
 
-      await adminData.entities.Document.create({
-        user_name: user?.full_name || 'Unknown User',
-        user_email: user.email,
-        document_type: kycDocuments.document_type,
-        document_number: kycDocuments.document_number.trim(),
-        verification_status: 'pending',
-        front_image: frontUpload.file_url,
-        back_image: backUpload.file_url,
-      });
+      await api.uploadKycDocument(form);
 
       setKycStatus('pending');
       setKycDocuments({
         document_type: 'National ID',
         document_number: '',
         front_file: null,
-        back_file: null,
       });
       setIsKycModalOpen(false);
       handleApiSuccess('Documents submitted successfully. Verification is pending.');
@@ -848,22 +834,12 @@ export default function Profile() {
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2 text-gray-700">Front Image</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleKycFieldChange('front_file', e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Back Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleKycFieldChange('back_file', e.target.files?.[0] || null)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm"
                 />
               </div>

@@ -33,13 +33,16 @@ import AdminDashboard from './pages/dashboard/AdminDashboard';
 import AdminVehicles from './pages/dashboard/AdminVehicles';
 import AdminBookings from './pages/dashboard/AdminBookings';
 import AdminUsers from './pages/dashboard/AdminUsers';
+import AdminMessages from './pages/dashboard/AdminMessages';
 import AdminDocuments from './pages/dashboard/AdminDocuments';
+import AdminDriverLicenseVerification from './pages/dashboard/AdminDriverLicenseVerification';
 import AddPost from './pages/dashboard/AddPost';
 import DriverLayout from './DriverLayout';
 import DriverDashboard from './pages/driver/DriverDashboard';
 import DriverRequests from './pages/driver/DriverRequests';
 import DriverVehicles from './pages/driver/DriverVehicles';
 import DriverAddPost from './pages/driver/DriverAddPost';
+import DriverProfile from './pages/driver/DriverProfile';
 
 
 
@@ -163,7 +166,9 @@ function App() {
             <Route path="vehicles" element={<AdminVehicles />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="messages" element={<AdminMessages />} />
             <Route path="documents" element={<AdminDocuments />} />
+            <Route path="driver-licenses" element={<AdminDriverLicenseVerification />} />
             <Route path="add-post" element={<AddPost />} />
           </Route>
 
@@ -178,6 +183,7 @@ function App() {
             <Route index element={<DriverDashboard />} />
             <Route path="requests" element={<DriverRequests />} />
             <Route path="vehicles" element={<DriverVehicles />} />
+            <Route path="profile" element={<DriverProfile />} />
             <Route path="add-post" element={<DriverAddPost />} />
           </Route>
 

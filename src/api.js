@@ -104,6 +104,11 @@ const api = {
     return response.data;
   },
 
+  async uploadProfilePhoto(formData) {
+    const response = await axiosInstance.post("/users/me/profile-photo", formData);
+    return response.data;
+  },
+
   // Vehicle endpoints (will be implemented when backend has them)
   async getVehicles(params = {}) {
     const response = await axiosInstance.get("/vehicles", { params });
@@ -279,6 +284,67 @@ const api = {
     const response = await axiosInstance.get("/admin/posts", { params });
     return response.data;
   },
+
+  async getAdminUsers(params = {}) {
+    const response = await axiosInstance.get("/admin/users", { params });
+    return response.data;
+  },
+
+  // Driver License Verification endpoints
+  async getPendingDriverLicenses(params = {}) {
+    const response = await axiosInstance.get("/admin/driver-licenses/pending", { params });
+    return response.data;
+  },
+
+  async getAllDriverLicenses(params = {}) {
+    const response = await axiosInstance.get("/admin/driver-licenses", { params });
+    return response.data;
+  },
+
+  async verifyDriverLicense(licenseId, action, rejectionReason = null) {
+    const response = await axiosInstance.post("/admin/driver-license/verify", {
+      license_id: licenseId,
+      action: action,
+      rejection_reason: rejectionReason,
+    });
+    return response.data;
+  },
+
+  async uploadDriverLicense(licenseData) {
+    const response = await axiosInstance.post("/users/driver/license", licenseData);
+    return response.data;
+  },
+
+  async getMyDriverLicense() {
+    const response = await axiosInstance.get("/users/driver/license");
+    return response.data;
+  },
+
+  async uploadKycDocument(formData) {
+    const response = await axiosInstance.post("/users/kyc-documents", formData);
+    return response.data;
+  },
+
+  async getMyKycDocument() {
+    const response = await axiosInstance.get("/users/kyc-documents/me");
+    return response.data;
+  },
+
+  async getAdminKycDocuments(params = {}) {
+    const response = await axiosInstance.get("/admin/kyc-documents", { params });
+    return response.data;
+  },
+
+  async updateAdminKycStatus(documentId, data) {
+    const response = await axiosInstance.patch(`/admin/kyc-documents/${documentId}/status`, data);
+    return response.data;
+  },
+
+  async getAdminMessages(params = {}) {
+    const response = await axiosInstance.get("/admin/messages", { params });
+    return response.data;
+  },
 };
+
 
 export default api;

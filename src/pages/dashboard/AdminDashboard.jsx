@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Car, Users, CalendarDays } from 'lucide-react';
+import { Car, Users, CalendarDays, Shield } from 'lucide-react';
 
 const NepaliRupeeIcon = ({ className = '' }) => (
   <span className={`${className} text-[11px] font-semibold leading-none`}>Rs</span>
@@ -30,6 +30,11 @@ export default function AdminDashboard() {
     queryFn: () => api.getAdminDashboard({ recent_limit: 8 }),
   });
 
+  const { data: pendingLicenses } = useQuery({
+    queryKey: ['pending-driver-licenses'],
+    queryFn: () => api.getPendingDriverLicenses({ limit: 300 }),
+  });
+
   const statsSource = dashboard?.stats || {};
   const recentBookings = dashboard?.recent_bookings || [];
   const bookingBreakdown = dashboard?.booking_status_breakdown || {};
@@ -41,12 +46,14 @@ export default function AdminDashboard() {
   const completedBookings = statsSource.completed_bookings || 0;
   const pendingBookings = statsSource.pending_bookings || 0;
   const totalRevenue = statsSource.total_revenue || 0;
+  const pendingLicenseCount = (pendingLicenses && pendingLicenses.length > 0) ? pendingLicenses.length : 0;
 
   const stats = [
     { label: 'Total Vehicles', value: totalPosts, sub: 'all listings', icon: Car, color: 'bg-blue-50 text-blue-600' },
     { label: 'Registered Users', value: totalUsers, sub: 'all time', icon: Users, color: 'bg-purple-50 text-purple-600' },
     { label: 'Confirmed Bookings', value: confirmedBookings, sub: `${totalBookings} total`, icon: CalendarDays, color: 'bg-amber-50 text-amber-600' },
     { label: 'Total Revenue', value: `Rs. ${totalRevenue.toLocaleString()}`, sub: 'confirmed + completed', icon: NepaliRupeeIcon, color: 'bg-green-50 text-green-600' },
+    { label: 'Pending Licenses', value: pendingLicenseCount, sub: 'awaiting verification', icon: Shield, color: 'bg-red-50 text-red-600' },
   ];
 
   const statusColors = {
@@ -64,7 +71,7 @@ export default function AdminDashboard() {
         <p className="text-sm text-gray-500 mt-0.5">Welcome back! Here's what's happening.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map(({ label, value, sub, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between mb-3">
