@@ -208,6 +208,37 @@ const api = {
     return response.data;
   },
 
+  // Hire request and chat endpoints
+  async createHireRequest(data) {
+    const response = await axiosInstance.post('/hire-requests', data);
+    return response.data;
+  },
+
+  async getMyHireRequests(params = {}) {
+    const response = await axiosInstance.get('/hire-requests/me', { params });
+    return response.data;
+  },
+
+  async getOwnerHireRequests(params = {}) {
+    const response = await axiosInstance.get('/hire-requests/owner/me', { params });
+    return response.data;
+  },
+
+  async getHireRequestChats() {
+    const response = await axiosInstance.get('/chats/me');
+    return response.data;
+  },
+
+  async getHireRequestMessages(hireRequestId) {
+    const response = await axiosInstance.get(`/chats/${hireRequestId}/messages`);
+    return response.data;
+  },
+
+  async sendHireRequestMessage(hireRequestId, data) {
+    const response = await axiosInstance.post(`/chats/${hireRequestId}/messages`, data);
+    return response.data;
+  },
+
   async getBookingAvailability(postId, startDate, endDate) {
     const response = await axiosInstance.get('/bookings/availability', {
       params: {

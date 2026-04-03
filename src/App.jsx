@@ -45,8 +45,6 @@ import DriverAddPost from './pages/driver/DriverAddPost';
 import DriverProfile from './pages/driver/DriverProfile';
 import HireChats from './pages/chat/HireChats';
 
-
-
 function App() {
   return (
     <AuthProvider>
@@ -57,10 +55,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
-
           <Route path="/vehicles/:id" element={<CarDetails />} />
-
-
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/hire-a-driver" element={<HireaDriver />} />
           <Route path="/faqs" element={<FAQs />} />
@@ -71,7 +66,6 @@ function App() {
           <Route path="/customer-care" element={<CustomerCare />} />
           <Route path="/self-drive" element={<SelfDrive />} />
           <Route path="/with-driver" element={<WithDriver />} />
-
 
           {/* --- USER PROTECTED ROUTES --- */}
           <Route

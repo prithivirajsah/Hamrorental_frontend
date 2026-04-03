@@ -26,7 +26,7 @@ const services = [
   },
 ];
 
-export default function ServicesSection() {
+export default function ServicesSection({ onRequest }) {
   return (
     <section className="py-15 bg-gradient-to-b from-white to-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +46,7 @@ export default function ServicesSection() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => (
-            <ServiceCard key={service.title} {...service} delay={index * 0.1} />
+            <ServiceCard key={service.title} {...service} delay={index * 0.1} onRequest={onRequest} />
           ))}
         </div>
       </div>

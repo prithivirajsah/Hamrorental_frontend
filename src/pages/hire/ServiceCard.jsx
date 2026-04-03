@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 
-export default function ServiceCard({ icon: Icon, title, description, price, features, delay = 0 }) {
+export default function ServiceCard({ icon: Icon, title, description, price, features, onRequest, delay = 0 }) {
   return (
     <div className="relative bg-white rounded-3xl p-8 shadow-lg border border-slate-100 overflow-hidden">
       
@@ -31,8 +31,12 @@ export default function ServiceCard({ icon: Icon, title, description, price, fea
           ))}
         </ul>
 
-        <button className="flex items-center gap-2 text-[#685ed9] font-semibold">
-          Book Now
+        <button
+          type="button"
+          className="flex items-center gap-2 text-[#685ed9] font-semibold"
+          onClick={() => onRequest?.(title)}
+        >
+          Request a Driver
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

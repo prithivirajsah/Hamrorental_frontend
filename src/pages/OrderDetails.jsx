@@ -7,6 +7,7 @@ import {
   CircleDollarSign,
   ClipboardList,
   Hash,
+  UserRound,
   User,
 } from 'lucide-react';
 import Header from '../components/Header';
@@ -39,6 +40,17 @@ const normalizeBooking = (payload) => {
 };
 
 const getStatusClass = (status) => statusClasses[status] || 'bg-gray-100 text-gray-700';
+
+const buildHireDriverLink = (booking) => {
+  if (!booking) return '/hire-a-driver';
+
+  const params = new URLSearchParams();
+  if (booking.start_date) params.set('pickup_date', booking.start_date);
+  if (booking.vehicle_name) params.set('note', `Booked vehicle: ${booking.vehicle_name}`);
+
+  const query = params.toString();
+  return query ? `/hire-a-driver?${query}` : '/hire-a-driver';
+};
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -159,6 +171,16 @@ export default function OrderDetails() {
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Total Price:</span> Rs. {Number(booking.total_price || 0).toLocaleString()}</p>
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Status:</span> <span className="capitalize">{booking.status || 'pending'}</span></p>
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Booking ID:</span> #{booking.id}</p>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <Link
+                      to={buildHireDriverLink(booking)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-sm font-medium transition-colors"
+                    >
+                      <UserRound className="w-4 h-4" />
+                      Hire Driver
+                    </Link>
                   </div>
                 </section>
               </div>

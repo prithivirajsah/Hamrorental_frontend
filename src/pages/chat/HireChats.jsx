@@ -4,11 +4,7 @@ import { MessageSquare, Send, User } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  driverChatStorageEvents,
-  getChatThreadsForUser,
-  sendChatMessage,
-} from '@/utils/chatStorage';
+import api from '@/api';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -16,11 +12,51 @@ const formatDateTime = (value) => {
 };
 
 function getCurrentUserId(user) {
-  return String(user?.id ?? user?.user_id ?? user?.email ?? '');
+  return Number(user?.id ?? user?.user_id ?? 0);
+}
+
+function normalizeHireRequest(request) {
+  if (!request) return null;
+
+  return {
+    id: String(request.id),
+    hire_request_id: request.id,
+    title: request.vehicle_name || request.owner_name || `Hire request #${request.id}`,
+    status: request.status || 'pending',
+    pickup_location: request.pickup_location || '',
+    return_location: request.return_location || '',
+    start_date: request.start_date || '',
+    end_date: request.end_date || '',
+    requested_price: request.requested_price,
+    note: request.note || '',
+    requester_id: request.requester_id,
+    requester_name: request.requester_name,
+    requester_email: request.requester_email,
+    owner_id: request.owner_id,
+    owner_name: request.owner_name,
+    owner_email: request.owner_email,
+    vehicle_name: request.vehicle_name,
+    updated_at: request.updated_at || request.created_at,
+    last_message: request.last_message || null,
+  };
 }
 
 function getThreadPeer(thread, currentUserId) {
-  return (thread?.participants || []).find((participant) => participant.user_id !== currentUserId) || null;
+  if (!thread) return null;
+
+  if (Number(thread.requester_id) === Number(currentUserId)) {
+    return {
+      user_id: thread.owner_id,
+      name: thread.owner_name || 'Driver',
+      email: thread.owner_email || '',
+    };
+  }
+
+  return {
+    user_id: thread.requester_id,
+    name: thread.requester_name || 'Customer',
+    email: thread.requester_email || '',
+  };
 }
 
 function ChatPanel() {
@@ -28,33 +64,72 @@ function ChatPanel() {
   const location = useLocation();
   const [threads, setThreads] = useState([]);
   const [selectedThreadId, setSelectedThreadId] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const messagesEndRef = useRef(null);
 
   const currentUserId = useMemo(() => getCurrentUserId(user), [user]);
 
-  const refreshThreads = () => {
-    const nextThreads = getChatThreadsForUser(user);
-    setThreads(nextThreads);
-
-    const queryThreadId = new URLSearchParams(location.search).get('thread');
-    if (queryThreadId && nextThreads.some((thread) => thread.id === queryThreadId)) {
-      setSelectedThreadId(queryThreadId);
+  const refreshThreads = async () => {
+    if (!user?.id) {
+      setThreads([]);
+      setSelectedThreadId('');
+      setMessages([]);
       return;
     }
 
-    if (!nextThreads.some((thread) => thread.id === selectedThreadId)) {
-      setSelectedThreadId(nextThreads[0]?.id || '');
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const [myRequests, ownerRequests] = await Promise.allSettled([
+        api.getMyHireRequests({ limit: 200 }),
+        api.getOwnerHireRequests({ limit: 200 }),
+      ]);
+
+      const collected = [
+        ...(myRequests.status === 'fulfilled' && Array.isArray(myRequests.value) ? myRequests.value : []),
+        ...(ownerRequests.status === 'fulfilled' && Array.isArray(ownerRequests.value) ? ownerRequests.value : []),
+      ];
+
+      const deduped = new Map();
+      collected.forEach((request) => {
+        if (!request?.id) return;
+        deduped.set(String(request.id), normalizeHireRequest(request));
+      });
+
+      const nextThreads = Array.from(deduped.values()).sort((a, b) => {
+        const left = new Date(b.updated_at || b.created_at || 0).getTime();
+        const right = new Date(a.updated_at || a.created_at || 0).getTime();
+        return left - right;
+      });
+
+      setThreads(nextThreads);
+
+      const queryThreadId = new URLSearchParams(location.search).get('thread');
+      if (queryThreadId && nextThreads.some((thread) => thread.id === queryThreadId)) {
+        setSelectedThreadId(queryThreadId);
+        return;
+      }
+
+      if (!nextThreads.some((thread) => thread.id === selectedThreadId)) {
+        setSelectedThreadId(nextThreads[0]?.id || '');
+      }
+    } catch (fetchError) {
+      setError(fetchError?.response?.data?.detail || 'Failed to load chats.');
+      setThreads([]);
+      setSelectedThreadId('');
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     refreshThreads();
-    window.addEventListener(driverChatStorageEvents.DRIVER_CHAT_UPDATED_EVENT, refreshThreads);
-    return () => {
-      window.removeEventListener(driverChatStorageEvents.DRIVER_CHAT_UPDATED_EVENT, refreshThreads);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, location.search]);
 
   const selectedThread = useMemo(
@@ -66,32 +141,66 @@ function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedThread?.messages?.length]);
 
-  const handleSendMessage = (event) => {
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!selectedThread?.hire_request_id) {
+        setMessages([]);
+        return;
+      }
+
+      try {
+        const response = await api.getHireRequestMessages(selectedThread.hire_request_id);
+        setMessages(Array.isArray(response) ? response : []);
+      } catch {
+        setMessages([]);
+      }
+    };
+
+    loadMessages();
+  }, [selectedThread?.hire_request_id, selectedThread?.status]);
+
+  const handleSendMessage = async (event) => {
     event.preventDefault();
-    if (!selectedThreadId || !messageInput.trim()) return;
+    if (!selectedThread?.hire_request_id || !messageInput.trim()) return;
+    if (selectedThread.status !== 'approved') return;
 
-    sendChatMessage({
-      threadId: selectedThreadId,
-      senderUser: user,
-      message: messageInput,
-    });
+    setIsSending(true);
+    try {
+      await api.sendHireRequestMessage(selectedThread.hire_request_id, {
+        message: messageInput,
+      });
 
-    setMessageInput('');
-    refreshThreads();
+      setMessageInput('');
+      await refreshThreads();
+    } catch (sendError) {
+      setError(sendError?.response?.data?.detail || 'Failed to send message.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Driver Hire Chat</h1>
-        <p className="text-sm text-gray-500">Message your matched driver or customer after request confirmation.</p>
+        <p className="text-sm text-gray-500">Message your matched driver or customer after the hire request is created and approved.</p>
       </div>
 
-      {threads.length === 0 ? (
+      {error ? (
+        <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 text-sm">
+          {error}
+        </div>
+      ) : null}
+
+      {isLoading ? (
+        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-10 text-center text-gray-500">
+          Loading chats...
+        </div>
+      ) : threads.length === 0 ? (
         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-10 text-center">
           <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-700 font-medium">No active chat yet</p>
-          <p className="text-sm text-gray-500 mt-1">Create a hire request and wait for driver confirmation to start chat.</p>
+          <p className="text-sm text-gray-500 mt-1">Create a hire request and wait for approval to start chat.</p>
           {user?.role === 'user' ? (
             <Link to="/hire-a-driver" className="inline-flex mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium">
               Hire a Driver
@@ -107,7 +216,7 @@ function ChatPanel() {
             <div className="max-h-[560px] overflow-y-auto divide-y divide-gray-100">
               {threads.map((thread) => {
                 const peer = getThreadPeer(thread, currentUserId);
-                const lastMessage = thread.messages?.[thread.messages.length - 1];
+                const lastMessage = thread.last_message;
                 return (
                   <button
                     key={thread.id}
@@ -117,7 +226,8 @@ function ChatPanel() {
                     }`}
                   >
                     <p className="text-sm font-semibold text-gray-900 truncate">{peer?.name || thread.title}</p>
-                    <p className="text-xs text-gray-500 truncate mt-1">{lastMessage?.message || 'No message yet'}</p>
+                    <p className="text-xs text-gray-500 truncate mt-1">{lastMessage?.message || thread.note || 'No message yet'}</p>
+                    <p className="text-[11px] text-indigo-600 mt-1 capitalize">{thread.status}</p>
                     <p className="text-[11px] text-gray-400 mt-1">{formatDateTime(thread.updated_at)}</p>
                   </button>
                 );
@@ -129,40 +239,42 @@ function ChatPanel() {
             {selectedThread ? (
               <>
                 <div className="px-5 py-4 border-b border-gray-100">
-                  <p className="text-sm text-gray-500">Service: {selectedThread.context?.service_type || 'Driver Hire'}</p>
+                  <p className="text-sm text-gray-500">Status: <span className="capitalize">{selectedThread.status}</span></p>
                   <h2 className="text-lg font-semibold text-gray-900">{selectedThread.title}</h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    Pickup: {selectedThread.context?.pickup_location || 'N/A'} • {selectedThread.context?.pickup_date || 'N/A'} {selectedThread.context?.pickup_time || ''}
+                    Pickup: {selectedThread.pickup_location || 'N/A'} • Return: {selectedThread.return_location || 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Dates: {selectedThread.start_date || 'N/A'} to {selectedThread.end_date || 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Chat with {getThreadPeer(selectedThread, currentUserId)?.name || 'the other party'}
                   </p>
                 </div>
 
                 <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-gray-50">
-                  {(selectedThread.messages || []).map((message) => {
-                    const isMine = message.sender_user_id === currentUserId;
-                    const isSystem = message.sender_role === 'system';
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-12">
+                      <MessageSquare className="w-9 h-9 mx-auto mb-3 text-gray-300" />
+                      <p>{selectedThread.status === 'approved' ? 'No messages yet. Start the conversation.' : 'Chat opens after approval.'}</p>
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      const isMine = Number(message.sender_id) === Number(currentUserId);
 
-                    if (isSystem) {
                       return (
-                        <div key={message.id} className="text-center">
-                          <span className="inline-flex px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-700">
-                            {message.message}
-                          </span>
+                        <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${isMine ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
+                            <p className="text-xs opacity-80 mb-1">{isMine ? 'You' : message.sender_name || 'Driver'}</p>
+                            <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                            <p className={`text-[11px] mt-1 ${isMine ? 'text-indigo-100' : 'text-gray-400'}`}>
+                              {formatDateTime(message.created_at)}
+                            </p>
+                          </div>
                         </div>
                       );
-                    }
-
-                    return (
-                      <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${isMine ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
-                          <p className="text-xs opacity-80 mb-1">{isMine ? 'You' : message.sender_name}</p>
-                          <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                          <p className={`text-[11px] mt-1 ${isMine ? 'text-indigo-100' : 'text-gray-400'}`}>
-                            {formatDateTime(message.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                    })
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -171,10 +283,12 @@ function ChatPanel() {
                     className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     value={messageInput}
                     onChange={(event) => setMessageInput(event.target.value)}
-                    placeholder="Type your message"
+                    placeholder={selectedThread.status === 'approved' ? 'Type your message' : 'Chat is available after approval'}
+                    disabled={selectedThread.status !== 'approved' || isSending}
                   />
                   <button
                     type="submit"
+                    disabled={selectedThread.status !== 'approved' || isSending}
                     className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium"
                   >
                     <Send className="w-4 h-4" /> Send

@@ -4,7 +4,6 @@ import Footer from '../../components/Footer'
 import Hero from './Hero';
 import Features from './Features';
 import CarListing from './CarListing';
-import CarBrands from './CarBrands';
 import BookingSteps from './BookingSteps';
 import api from '../../api';
 
@@ -58,7 +57,6 @@ export default function Home() {
       />
       <Features items={homeData?.features} />
       <CarListing vehicles={posts.length > 0 ? posts : homeData?.featured_vehicles} />
-      <CarBrands />
       <BookingSteps />
       <Footer />
     </div>
