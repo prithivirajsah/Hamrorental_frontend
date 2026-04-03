@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { MdOutlineReviews } from "react-icons/md";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import { User, Heart, LogOut } from 'lucide-react';
+import { User, Heart, LogOut, MessageSquare } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
 import { useAuth } from '../contexts/AuthContext';
 import UserAddPost from '../pages/UserAddPost';
@@ -213,6 +213,15 @@ export default function Header() {
                               <Heart className="w-5 h-5" />
                               <span>My Cars</span>
                             </Link>
+
+                            <Link
+                              to="/driver/chats"
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <MessageSquare className="w-5 h-5" />
+                              <span>Hire Chats</span>
+                            </Link>
                           </>
                         ) : (
                           <>
@@ -241,6 +250,15 @@ export default function Header() {
                             >
                               <Heart className="w-5 h-5" />
                               <span>Wishlist</span>
+                            </Link>
+
+                            <Link
+                              to="/user/chats"
+                              className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                              onClick={() => setShowProfilePopup(false)}
+                            >
+                              <MessageSquare className="w-5 h-5" />
+                              <span>Driver Chats</span>
                             </Link>
                           </>
                         )}

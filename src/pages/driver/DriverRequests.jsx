@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Phone, User } from 'lucide-react';
 import {
   driverRequestStorageEvents,
   getDriverRequests,
   updateDriverRequestStatus,
 } from '@/utils/driverRequestStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formatDateTime = (date, time) => {
   if (!date) return '—';
@@ -24,6 +26,7 @@ const statusClasses = {
 };
 
 export default function DriverRequests() {
+  const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -52,7 +55,7 @@ export default function DriverRequests() {
   }, [requests]);
 
   const updateStatus = (requestId, status) => {
-    updateDriverRequestStatus(requestId, status);
+    updateDriverRequestStatus(requestId, status, user);
     setRequests(getDriverRequests());
   };
 
@@ -129,6 +132,14 @@ export default function DriverRequests() {
                     <p className="text-xs text-gray-500">
                       Submitted: {new Date(request.created_at).toLocaleString()}
                     </p>
+                    {request.status === 'confirmed' && request.chat_thread_id ? (
+                      <Link
+                        to={`/driver/chats?thread=${request.chat_thread_id}`}
+                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        Open Chat
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               </div>

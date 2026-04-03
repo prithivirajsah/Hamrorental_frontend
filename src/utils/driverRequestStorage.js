@@ -1,3 +1,5 @@
+import { ensureDriverRequestChatThread } from '@/utils/chatStorage';
+
 const DRIVER_REQUESTS_KEY = 'driver_hire_requests';
 const DRIVER_REQUESTS_UPDATED_EVENT = 'hamro_driver_requests_updated';
 
@@ -25,6 +27,8 @@ export function addDriverRequest(payload) {
   const nextRequest = {
     id: payload.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     customer_name: payload.customer_name || 'Unknown customer',
+    customer_user_id: payload.customer_user_id ? String(payload.customer_user_id) : null,
+    customer_email: payload.customer_email || '',
     phone: payload.phone || '',
     pickup_location: payload.pickup_location || '',
     service_type: payload.service_type || 'Hourly Hire',
@@ -40,14 +44,37 @@ export function addDriverRequest(payload) {
   return nextRequest;
 }
 
-export function updateDriverRequestStatus(requestId, status) {
+export function updateDriverRequestStatus(requestId, status, actorUser = null) {
   const requests = readRequests();
+  let ensuredThread = null;
+
   const nextRequests = requests.map((request) => {
     if (request.id !== requestId) return request;
-    return {
+
+    const driverMeta = actorUser?.role === 'driver'
+      ? {
+          assigned_driver_id: String(actorUser.id ?? actorUser.user_id ?? ''),
+          assigned_driver_name: actorUser.full_name || actorUser.username || actorUser.email || 'Driver',
+          assigned_driver_email: actorUser.email || '',
+        }
+      : {};
+
+    const nextRequest = {
       ...request,
+      ...driverMeta,
       status,
       updated_at: new Date().toISOString(),
+    };
+
+    if (status === 'confirmed' && actorUser?.role === 'driver') {
+      ensuredThread = ensureDriverRequestChatThread(nextRequest, actorUser);
+      if (ensuredThread?.id) {
+        nextRequest.chat_thread_id = ensuredThread.id;
+      }
+    }
+
+    return {
+      ...nextRequest,
     };
   });
 

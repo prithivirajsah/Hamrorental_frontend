@@ -9,8 +9,10 @@ import FeaturesSection from './FeaturesSection';
 import TestimonialsSection from './TestimonialsSection';
 import CTASection from './CTASection';
 import { addDriverRequest } from '@/utils/driverRequestStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HireaDriver() {
+  const { user, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     customer_name: '',
     phone: '',
@@ -27,6 +29,11 @@ export default function HireaDriver() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (!isAuthenticated() || user?.role !== 'user') {
+      toast.error('Please login as customer before hiring a driver.');
+      return;
+    }
 
     if (!formData.customer_name.trim()) {
       toast.error('Please enter your name.');
@@ -49,8 +56,13 @@ export default function HireaDriver() {
       return;
     }
 
-    addDriverRequest(formData);
-    toast.success('Driver request submitted. Drivers can now see your request.');
+    addDriverRequest({
+      ...formData,
+      customer_user_id: user?.id ?? user?.user_id,
+      customer_email: user?.email || '',
+      customer_name: formData.customer_name || user?.full_name || user?.username || 'Customer',
+    });
+    toast.success('Driver request submitted. Chat will open once a driver confirms.');
 
     setFormData({
       customer_name: '',

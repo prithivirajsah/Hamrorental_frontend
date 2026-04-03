@@ -43,6 +43,7 @@ import DriverRequests from './pages/driver/DriverRequests';
 import DriverVehicles from './pages/driver/DriverVehicles';
 import DriverAddPost from './pages/driver/DriverAddPost';
 import DriverProfile from './pages/driver/DriverProfile';
+import HireChats from './pages/chat/HireChats';
 
 
 
@@ -155,6 +156,15 @@ function App() {
           />
 
           <Route
+            path="/user/chats"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <HireChats />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
@@ -185,6 +195,7 @@ function App() {
             <Route path="vehicles" element={<DriverVehicles />} />
             <Route path="profile" element={<DriverProfile />} />
             <Route path="add-post" element={<DriverAddPost />} />
+            <Route path="chats" element={<HireChats embedded />} />
           </Route>
 
         </Routes>

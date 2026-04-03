@@ -20,33 +20,6 @@ const writeLikedMap = (map) => {
   localStorage.setItem(REVIEW_LIKED_KEY, JSON.stringify(map));
 };
 
-const defaultTestimonials = [
-  {
-    id: 'default-1',
-    name: 'Prithivi',
-    role: 'Business Executive',
-    image: '',
-    content: 'Exceptional service! The driver was professional, punctual, and made my airport transfer completely stress-free. Highly recommend!',
-    rating: 5
-  },
-  {
-    id: 'default-2',
-    name: 'Prithivi',
-    role: 'Frequent Traveler',
-    image: '',
-    content: 'I use their monthly service for my business needs. The drivers are always well-mannered and know the city inside out.',
-    rating: 5
-  },
-  {
-    id: 'default-3',
-    name: 'Prithivi',
-    role: 'Tourist',
-    image: '',
-    content: 'Made our vacation so much better! Our driver was not just skilled but also acted as a wonderful guide. Great value for money.',
-    rating: 5
-  }
-];
-
 export default function TestimonialsSection() {
   const [storedReviews, setStoredReviews] = useState([]);
   const [likedMap, setLikedMap] = useState(() => readLikedMap());
@@ -89,12 +62,10 @@ export default function TestimonialsSection() {
   }, []);
 
   const testimonials = useMemo(() => {
-    const formattedStored = storedReviews.map((review) => ({
+    return storedReviews.map((review) => ({
       ...review,
       content: review.vehicleName ? `${review.content} (${review.vehicleName})` : review.content,
     }));
-
-    return [...formattedStored, ...defaultTestimonials].slice(0, 6);
   }, [storedReviews]);
 
   const isReviewLiked = (reviewId) => Boolean(likedMap[reviewId]);
