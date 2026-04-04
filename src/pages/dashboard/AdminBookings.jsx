@@ -99,8 +99,6 @@ export default function AdminBookings() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Customer</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Vehicle</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Dates</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Days</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Amount</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                   <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Update</th>
                 </tr>
@@ -121,8 +119,6 @@ export default function AdminBookings() {
                         {booking.end_date && `to ${formatDate(booking.end_date)}`}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{booking.total_days || '—'}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">Rs. {booking.total_price?.toLocaleString() || '0'}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[booking.status] || 'bg-gray-100 text-gray-700'}`}>
                         {booking.status}

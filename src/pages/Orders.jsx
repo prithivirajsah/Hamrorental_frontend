@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, Car, CircleDollarSign, ClipboardList } from 'lucide-react';
+import { CalendarDays, ClipboardList } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
@@ -146,11 +146,9 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
               {filteredBookings.map((booking) => (
-                <Link
+                <div
                   key={booking.id}
-                  to={`${detailsBasePath}/${booking.id}`}
-                  state={{ booking }}
-                  className="block border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-sm transition-shadow"
+                  className="border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="space-y-2">
@@ -161,14 +159,6 @@ export default function Orders() {
                           <CalendarDays className="w-4 h-4" />
                           {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <Car className="w-4 h-4" />
-                          {booking.total_days || 0} day(s)
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 font-medium text-gray-800">
-                          <CircleDollarSign className="w-4 h-4" />
-                          Rs. {Number(booking.total_price || 0).toLocaleString()}
-                        </span>
                       </div>
                     </div>
 
@@ -176,11 +166,17 @@ export default function Orders() {
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getStatusClass(booking.status)}`}>
                         {booking.status || 'pending'}
                       </span>
-                      <span className="text-xs font-medium text-indigo-600">View details</span>
+                      <Link
+                        to={`${detailsBasePath}/${booking.id}`}
+                        state={{ booking }}
+                        className="text-xs font-medium text-indigo-600"
+                      >
+                        View details
+                      </Link>
                       <p className="text-xs text-gray-500">Booked on {formatDate(booking.created_at)}</p>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}

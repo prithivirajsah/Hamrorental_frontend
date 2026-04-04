@@ -3,8 +3,6 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarDays,
-  Car,
-  CircleDollarSign,
   ClipboardList,
   Hash,
   UserRound,
@@ -13,6 +11,7 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -40,6 +39,7 @@ const normalizeBooking = (payload) => {
 };
 
 const getStatusClass = (status) => statusClasses[status] || 'bg-gray-100 text-gray-700';
+const canCancelBooking = (status) => ['pending', 'confirmed'].includes(String(status || '').toLowerCase());
 
 const buildHireDriverLink = (booking) => {
   if (!booking) return '/hire-a-driver';
@@ -60,6 +60,7 @@ export default function OrderDetails() {
   const [booking, setBooking] = useState(prefetchedBooking);
   const [isLoading, setIsLoading] = useState(!prefetchedBooking);
   const [error, setError] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -88,6 +89,33 @@ export default function OrderDetails() {
 
     fetchBooking();
   }, [id, prefetchedBooking]);
+
+  const handleCancelBooking = async () => {
+    if (!booking?.id || !canCancelBooking(booking.status)) {
+      return;
+    }
+
+    const accepted = window.confirm('Are you sure you want to cancel this booking?');
+    if (!accepted) {
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const response = await api.cancelBooking(booking.id);
+      const updatedBooking = response?.booking || response;
+      setBooking((prev) => ({
+        ...(prev || {}),
+        ...(updatedBooking?.id ? updatedBooking : {}),
+        status: 'cancelled',
+      }));
+      toast.success(response?.message || 'Booking cancelled successfully.');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to cancel booking.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F3F2F2] text-black">
@@ -141,14 +169,6 @@ export default function OrderDetails() {
                         <CalendarDays className="w-4 h-4" />
                         {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
                       </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Car className="w-4 h-4" />
-                        {booking.total_days || 0} day(s)
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 font-medium text-gray-800">
-                        <CircleDollarSign className="w-4 h-4" />
-                        Rs. {Number(booking.total_price || 0).toLocaleString()}
-                      </span>
                     </div>
                   </div>
                   <p className="text-sm text-gray-500">Booked on {formatDate(booking.created_at)}</p>
@@ -161,26 +181,37 @@ export default function OrderDetails() {
                   <div className="space-y-2 text-sm">
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Start Date:</span> {formatDate(booking.start_date)}</p>
                     <p className="text-gray-600"><span className="font-medium text-gray-800">End Date:</span> {formatDate(booking.end_date)}</p>
-                    <p className="text-gray-600"><span className="font-medium text-gray-800">Duration:</span> {booking.total_days || 0} day(s)</p>
                   </div>
                 </section>
 
                 <section className="border border-gray-200 rounded-xl p-4">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">Payment</h3>
                   <div className="space-y-2 text-sm">
-                    <p className="text-gray-600"><span className="font-medium text-gray-800">Total Price:</span> Rs. {Number(booking.total_price || 0).toLocaleString()}</p>
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Status:</span> <span className="capitalize">{booking.status || 'pending'}</span></p>
                     <p className="text-gray-600"><span className="font-medium text-gray-800">Booking ID:</span> #{booking.id}</p>
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <Link
-                      to={buildHireDriverLink(booking)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-sm font-medium transition-colors"
-                    >
-                      <UserRound className="w-4 h-4" />
-                      Hire Driver
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <Link
+                        to={buildHireDriverLink(booking)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-sm font-medium transition-colors"
+                      >
+                        <UserRound className="w-4 h-4" />
+                        Hire Driver
+                      </Link>
+
+                      {canCancelBooking(booking.status) ? (
+                        <button
+                          type="button"
+                          onClick={handleCancelBooking}
+                          disabled={isCancelling}
+                          className="inline-flex items-center gap-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 px-3.5 py-2 text-sm font-medium transition-colors border border-red-200 disabled:opacity-60"
+                        >
+                          {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </section>
               </div>

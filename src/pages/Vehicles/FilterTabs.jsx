@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 const defaultCategories = [
   { id: 'all', label: 'All vehicles', icon: '🚗' },
   { id: 'sedan', label: 'Sedan', icon: '🚙' },
-  { id: 'cabriolet', label: 'Cabriolet', icon: '🏎️' },
   { id: 'pickup', label: 'Pickup', icon: '🛻' },
   { id: 'suv', label: 'SUV', icon: '🚐' },
   { id: 'minivan', label: 'Minivan', icon: '🚌' },

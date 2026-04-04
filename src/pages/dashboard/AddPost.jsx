@@ -261,7 +261,7 @@ export default function AddPost() {
               <Select value={form.category} onValueChange={v => set('category', v)}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['sedan', 'suv', 'pickup', 'cabriolet', 'minivan'].map(c => (
+                  {['sedan', 'suv', 'pickup', 'minivan'].map(c => (
                     <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
                   ))}
                 </SelectContent>

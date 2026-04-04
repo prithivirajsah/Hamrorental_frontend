@@ -255,6 +255,11 @@ const api = {
     return response.data;
   },
 
+  async cancelBooking(bookingId) {
+    const response = await axiosInstance.patch(`/bookings/${bookingId}/cancel`);
+    return response.data;
+  },
+
   // Wishlist endpoints (will be implemented when backend has them)
   async getWishlist() {
     const response = await axiosInstance.get("/wishlist");

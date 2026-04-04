@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Gauge, Users, Wind, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Gauge, Users, Wind, ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import api from '../../api';
@@ -71,6 +71,8 @@ export default function CarDetails() {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const bookingRequestInFlightRef = useRef(false);
+  const reviewSectionRef = useRef(null);
+  const [openReviewAfterBooking, setOpenReviewAfterBooking] = useState(false);
   const [reviewEligibilityLoading, setReviewEligibilityLoading] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [userRating, setUserRating] = useState(0);
@@ -220,6 +222,37 @@ export default function CarDetails() {
   }, [car?.id]);
 
   useEffect(() => {
+    if (!showBookingForm) {
+      document.body.style.overflow = '';
+      return undefined;
+    }
+
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showBookingForm]);
+
+  useEffect(() => {
+    if (!canReview || !openReviewAfterBooking) {
+      return;
+    }
+
+    reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const focusTimer = window.setTimeout(() => {
+      const reviewTextarea = document.getElementById('vehicle-review-textarea');
+      reviewTextarea?.focus();
+    }, 350);
+
+    setOpenReviewAfterBooking(false);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [canReview, openReviewAfterBooking]);
+
+  useEffect(() => {
     const checkReviewEligibility = async () => {
       if (!car?.id || !user?.id || !api.isAuthenticated()) {
         setCanReview(false);
@@ -310,6 +343,7 @@ export default function CarDetails() {
 
       toast.success(response?.message || 'Booking created successfully.');
       setCanReview(true);
+      setOpenReviewAfterBooking(true);
       setBookingForm({
         pickup_location: '',
         return_location: '',
@@ -361,78 +395,77 @@ export default function CarDetails() {
         </Link>
 
         {loading ? (
-          <div className="bg-white rounded-2xl p-8 border border-gray-100">Loading vehicle details...</div>
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">Loading vehicle details...</div>
         ) : !car ? (
-          <div className="bg-white rounded-2xl p-8 border border-gray-100">
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
             Vehicle not found.
           </div>
         ) : (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 sm:p-8">
-              <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center">
-                <div className="relative w-full flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setActiveImageIndex((prev) => (prev === 0 ? detailImages.length - 1 : prev - 1))}
-                    disabled={!hasMultipleImages}
-                    className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center ${hasMultipleImages ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-gray-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveImageIndex((prev) => (prev + 1) % detailImages.length)}
-                    disabled={!hasMultipleImages}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center ${hasMultipleImages ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="w-4 h-4 text-gray-700" />
-                  </button>
+          <section className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-indigo-50 via-white to-indigo-50" />
+            <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 sm:p-7">
+              <div className="lg:col-span-7 space-y-4">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:p-4">
+                  <div className="relative overflow-hidden rounded-xl bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setActiveImageIndex((prev) => (prev === 0 ? detailImages.length - 1 : prev - 1))}
+                      disabled={!hasMultipleImages}
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center shadow-sm ${hasMultipleImages ? 'opacity-100 hover:bg-white' : 'opacity-40 cursor-not-allowed'}`}
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-gray-700" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveImageIndex((prev) => (prev + 1) % detailImages.length)}
+                      disabled={!hasMultipleImages}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 border border-gray-200 flex items-center justify-center shadow-sm ${hasMultipleImages ? 'opacity-100 hover:bg-white' : 'opacity-40 cursor-not-allowed'}`}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-700" />
+                    </button>
 
-                  <img src={detailImages[activeImageIndex] || car.image} alt={car.name} className="w-full max-h-80 object-contain" />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-indigo-600 font-semibold mb-2">{car.category}</p>
-                <h1 className="text-3xl font-bold text-gray-900 mb-3">{car.name}</h1>
-                <p className="text-2xl font-bold text-indigo-600 mb-6">{car.price} <span className="text-sm text-gray-500 font-normal">per day</span></p>
-
-                {hasGuestRating ? (
-                  <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Guest Rating</p>
-                      <RatingDisplay value={ratingValue} showValue valueClassName="font-semibold text-amber-800" />
-                    </div>
-                    <p className="text-sm text-amber-800 font-medium">Based on {ratingCount} {ratingCount === 1 ? 'review' : 'reviews'}</p>
+                    <img
+                      src={detailImages[activeImageIndex] || car.image}
+                      alt={car.name}
+                      className="w-full h-[280px] sm:h-[360px] object-cover"
+                    />
                   </div>
-                ) : null}
 
-                {car.location ? (
-                  <p className="text-sm text-gray-500 mb-4">Location: {car.location}</p>
-                ) : null}
+                  {detailImages.length > 1 ? (
+                    <div className="mt-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
+                      {detailImages.map((image, index) => (
+                        <button
+                          key={`${image}-${index}`}
+                          type="button"
+                          onClick={() => setActiveImageIndex(index)}
+                          className={`overflow-hidden rounded-lg border transition ${index === activeImageIndex ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-gray-200 hover:border-indigo-300'}`}
+                          aria-label={`Show image ${index + 1}`}
+                        >
+                          <img src={image} alt={`${car.name} ${index + 1}`} className="h-14 w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
 
-                {car.description ? (
-                  <p className="text-gray-700 mb-6">{car.description}</p>
-                ) : null}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-                  <div className="border border-gray-100 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                       <Gauge className="w-4 h-4" />
                       Transmission
                     </div>
                     <p className="font-semibold text-gray-900">{car.transmission || 'Automatic'}</p>
                   </div>
-                  <div className="border border-gray-100 rounded-lg p-4">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                       <Users className="w-4 h-4" />
                       Fuel
                     </div>
                     <p className="font-semibold text-gray-900">{car.fuel || 'PB 95'}</p>
                   </div>
-                  <div className="border border-gray-100 rounded-lg p-4">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                       <Wind className="w-4 h-4" />
                       Comfort
@@ -440,115 +473,189 @@ export default function CarDetails() {
                     <p className="font-semibold text-gray-900">Air Conditioner</p>
                   </div>
                 </div>
+              </div>
 
-                <button
-                  onClick={() => setShowBookingForm((prev) => !prev)}
-                  className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-7 rounded-lg transition-colors"
-                >
-                  {showBookingForm ? 'Hide Booking Form' : 'Book Now'}
-                </button>
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm lg:sticky lg:top-6">
+                  <p className="inline-flex rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">{car.category}</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mt-3">{car.name}</h1>
+                  <p className="text-3xl font-bold text-indigo-600 mt-2">
+                    {car.price}
+                    <span className="text-sm text-gray-500 font-normal ml-1">per day</span>
+                  </p>
 
-                {showBookingForm ? (
-                  <div className="mt-6 border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-sm text-gray-600">Pickup Location</label>
-                      <input
-                        value={bookingForm.pickup_location}
-                        onChange={(event) => onBookingFieldChange('pickup_location', event.target.value)}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                        placeholder="e.g. Kathmandu"
-                      />
+                  {car.location ? (
+                    <p className="text-sm text-gray-600 mt-4">Location: <span className="font-medium text-gray-900">{car.location}</span></p>
+                  ) : null}
+
+                  {hasGuestRating ? (
+                    <div className="mt-4 flex items-center justify-between gap-4 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Guest Rating</p>
+                        <RatingDisplay value={ratingValue} showValue valueClassName="font-semibold text-amber-800" />
+                      </div>
+                      <p className="text-sm text-amber-800 font-medium">{ratingCount} {ratingCount === 1 ? 'review' : 'reviews'}</p>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Return Location</label>
-                      <input
-                        value={bookingForm.return_location}
-                        onChange={(event) => onBookingFieldChange('return_location', event.target.value)}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                        placeholder="e.g. Pokhara"
-                      />
+                  ) : null}
+
+                  {car.description ? (
+                    <p className="text-gray-700 mt-4 leading-relaxed">{car.description}</p>
+                  ) : null}
+
+                  <div className="mt-6 border-t border-gray-100 pt-5">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h2 className="text-lg font-semibold text-gray-900">Booking</h2>
+                      <button
+                        onClick={() => setShowBookingForm(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Book Now
+                      </button>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Start Date</label>
-                      <input
-                        type="date"
-                        min={today}
-                        value={bookingForm.start_date}
-                        onChange={(event) => onBookingFieldChange('start_date', event.target.value)}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+
+                    <p className="text-sm text-gray-500">Booking form opens in a popup.</p>
+                  </div>
+
+                  {reviewEligibilityLoading ? (
+                    <div className="mt-6 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+                      Checking review eligibility...
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">End Date</label>
-                      <input
-                        type="date"
-                        min={bookingForm.start_date || today}
-                        value={bookingForm.end_date}
-                        onChange={(event) => onBookingFieldChange('end_date', event.target.value)}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="text-sm text-gray-600">Note (optional)</label>
+                  ) : canReview ? (
+                    <div ref={reviewSectionRef} className="mt-6 border border-gray-200 rounded-xl p-5">
+                      <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
+                      <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
+
+                      <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
+
                       <textarea
-                        value={bookingForm.note}
-                        onChange={(event) => onBookingFieldChange('note', event.target.value)}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 min-h-20"
-                        placeholder="Any additional request"
+                        value={reviewText}
+                        onChange={(event) => {
+                          setReviewText(event.target.value);
+                        }}
+                        id="vehicle-review-textarea"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
+                        placeholder="Write a short review (optional)"
                       />
+
+                      <div className="mt-4 flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleSubmitReview}
+                          disabled={!userRating}
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          Submit Rating
+                        </button>
+                      </div>
                     </div>
-                    <div className="sm:col-span-2">
-                      <button
-                        onClick={handleBookNow}
-                        disabled={bookingLoading}
-                        className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-6 rounded-lg disabled:opacity-60"
-                      >
-                        {bookingLoading ? 'Booking...' : 'Confirm Booking'}
-                      </button>
+                  ) : (
+                    <div className="mt-6 border border-gray-200 rounded-xl p-5 text-sm text-gray-600">
+                      You can review this vehicle only after booking it.
                     </div>
-                  </div>
-                ) : null}
-
-                {reviewEligibilityLoading ? (
-                  <div className="mt-8 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
-                    Checking review eligibility...
-                  </div>
-                ) : canReview ? (
-                  <div className="mt-8 border border-gray-200 rounded-xl p-5">
-                    <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
-                    <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
-
-                    <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
-
-                    <textarea
-                      value={reviewText}
-                      onChange={(event) => {
-                        setReviewText(event.target.value);
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
-                      placeholder="Write a short review (optional)"
-                    />
-
-                    <div className="mt-4 flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handleSubmitReview}
-                        disabled={!userRating}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        Submit Rating
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-8 border border-gray-200 rounded-xl p-5 text-sm text-gray-600">
-                    You can review this vehicle only after booking it.
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </section>
         )}
+
+        {car && showBookingForm ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Booking form"
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/35 backdrop-blur-[1px]"
+              onClick={() => setShowBookingForm(false)}
+              aria-label="Close booking form"
+            />
+
+            <div className="relative w-full max-w-3xl rounded-3xl border border-gray-200 bg-[#F3F2F2] p-4 shadow-2xl sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-bold text-gray-900">Booking</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingForm(false)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                  >
+                    Hide Booking Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingForm(false)}
+                    className="h-10 w-10 rounded-lg border border-gray-300 bg-white text-gray-600 hover:text-gray-900"
+                    aria-label="Close"
+                  >
+                    <X className="mx-auto h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl bg-[#F3F2F2] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-600">Pickup Location</label>
+                  <input
+                    value={bookingForm.pickup_location}
+                    onChange={(event) => onBookingFieldChange('pickup_location', event.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                    placeholder="e.g. Kathmandu"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Return Location</label>
+                  <input
+                    value={bookingForm.return_location}
+                    onChange={(event) => onBookingFieldChange('return_location', event.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                    placeholder="e.g. Pokhara"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Start Date</label>
+                  <input
+                    type="date"
+                    min={today}
+                    value={bookingForm.start_date}
+                    onChange={(event) => onBookingFieldChange('start_date', event.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">End Date</label>
+                  <input
+                    type="date"
+                    min={bookingForm.start_date || today}
+                    value={bookingForm.end_date}
+                    onChange={(event) => onBookingFieldChange('end_date', event.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-sm text-gray-600">Note (optional)</label>
+                  <textarea
+                    value={bookingForm.note}
+                    onChange={(event) => onBookingFieldChange('note', event.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 min-h-20 bg-white"
+                    placeholder="Any additional request"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <button
+                    onClick={handleBookNow}
+                    disabled={bookingLoading}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-6 rounded-lg disabled:opacity-60"
+                  >
+                    {bookingLoading ? 'Booking...' : 'Confirm Booking'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
       <Footer />
     </div>

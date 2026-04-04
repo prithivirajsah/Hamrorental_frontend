@@ -51,7 +51,6 @@ const presetFeatures = [
 
 const categoryOptions = [
   { value: 'sedan', label: 'Sedan' },
-  { value: 'cabriolet', label: 'Cabriolet' },
   { value: 'pickup', label: 'Pickup' },
   { value: 'suv', label: 'SUV' },
   { value: 'minivan', label: 'Minivan' },
