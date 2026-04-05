@@ -77,7 +77,7 @@ export default function Orders() {
             toast.info(`You have ${reminders.length} completed rental${reminders.length === 1 ? '' : 's'} waiting for a review.`);
           }
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setReviewReminders([]);
         }
@@ -101,6 +101,8 @@ export default function Orders() {
     if (statusFilter === 'all') return bookings;
     return bookings.filter((booking) => booking.status === statusFilter);
   }, [bookings, statusFilter]);
+
+  const hasReviewReminders = reviewReminders.length > 0;
 
   const stats = useMemo(() => ({
     total: bookings.length,
@@ -129,35 +131,31 @@ export default function Orders() {
           </Link>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-4 md:p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
-                <BellRing className="h-5 w-5" />
+        {!remindersLoading && hasReviewReminders && (
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-4 md:p-5 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
+                  <BellRing className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Review notification</p>
+                  <h2 className="mt-1 text-lg font-bold text-gray-900">You have completed rentals ready for review</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Open the reviews page to rate your ride and help other renters.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Review notification</p>
-                <h2 className="mt-1 text-lg font-bold text-gray-900">
-                  {remindersLoading ? 'Checking for completed rentals...' : reviewReminders.length > 0 ? 'You have completed rentals ready for review' : 'No review notifications right now'}
-                </h2>
-                <p className="mt-1 text-sm text-gray-600">
-                  {remindersLoading
-                    ? 'We are loading the latest completed bookings.'
-                    : reviewReminders.length > 0
-                      ? 'Open the reviews page to rate your ride and help other renters.'
-                      : 'When your rental is completed, a review reminder will appear here.'}
-                </p>
-              </div>
+              <Link
+                to="/reviews"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+              >
+                Go to Reviews
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-            <Link
-              to="/reviews"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
-            >
-              Go to Reviews
-              <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white border border-gray-200 rounded-xl p-4">

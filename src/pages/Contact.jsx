@@ -114,11 +114,7 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
-              <p className="text-sm text-indigo-100">Average response time</p>
-              <p className="text-3xl font-bold mt-1">Under 2 hours</p>
-              <p className="text-xs text-indigo-100 mt-3">Our team replies fastest during working hours.</p>
-            </div>
+
           </div>
         </section>
 

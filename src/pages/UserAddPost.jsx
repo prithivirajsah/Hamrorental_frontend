@@ -224,7 +224,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
                 className="mt-1"
                 value={form.title}
                 onChange={(event) => setField('title', event.target.value)}
-                placeholder="e.g. Toyota Corolla 2022 for Rent"
+                placeholder="Toyota Corolla 2022 "
                 required
               />
             </div>
@@ -239,7 +239,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
                   step={1}
                   value={form.pricePerDay}
                   onChange={(event) => setField('pricePerDay', event.target.value)}
-                  placeholder="e.g. 5000"
+                  placeholder="5000"
                   className="pl-9"
                   required
                 />
@@ -269,7 +269,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
                 <Input
                   value={form.location}
                   onChange={(event) => setField('location', event.target.value)}
-                  placeholder="e.g. Kathmandu"
+                  placeholder="Kathmandu"
                   className="pl-9"
                   required
                 />
@@ -283,7 +283,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
                 <Input
                   value={form.contactNumber}
                   onChange={(event) => setField('contactNumber', event.target.value)}
-                  placeholder="e.g. 98XXXXXXXX"
+                  placeholder=" 98XXXXXXXX"
                   className="pl-9"
                   required
                 />
