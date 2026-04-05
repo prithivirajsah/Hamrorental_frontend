@@ -72,9 +72,9 @@ export default function CarDetails() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const bookingRequestInFlightRef = useRef(false);
   const reviewSectionRef = useRef(null);
-  const [openReviewAfterBooking, setOpenReviewAfterBooking] = useState(false);
   const [reviewEligibilityLoading, setReviewEligibilityLoading] = useState(false);
   const [canReview, setCanReview] = useState(false);
+  const [reviewReminder, setReviewReminder] = useState(null);
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -235,40 +235,37 @@ export default function CarDetails() {
   }, [showBookingForm]);
 
   useEffect(() => {
-    if (!canReview || !openReviewAfterBooking) {
-      return;
-    }
-
-    reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    const focusTimer = window.setTimeout(() => {
-      const reviewTextarea = document.getElementById('vehicle-review-textarea');
-      reviewTextarea?.focus();
-    }, 350);
-
-    setOpenReviewAfterBooking(false);
-
-    return () => {
-      window.clearTimeout(focusTimer);
-    };
-  }, [canReview, openReviewAfterBooking]);
-
-  useEffect(() => {
     const checkReviewEligibility = async () => {
       if (!car?.id || !user?.id || !api.isAuthenticated()) {
         setCanReview(false);
+        setReviewReminder(null);
         return;
       }
 
       setReviewEligibilityLoading(true);
       try {
-        const myBookings = await api.getMyBookings({ limit: 100 });
-        const hasBookingForCar = (Array.isArray(myBookings) ? myBookings : []).some(
-          (booking) => Number(booking.post_id ?? booking.postId) === Number(car.id)
-            && ['pending', 'confirmed', 'completed'].includes(String(booking.status || '').toLowerCase()),
+        const reminders = await api.getReviewReminders({ limit: 20 });
+        const matchedReminder = (Array.isArray(reminders) ? reminders : []).find(
+          (item) => Number(item.post_id ?? item.postId) === Number(car.id),
         );
-        setCanReview(hasBookingForCar);
+
+        setReviewReminder(matchedReminder || null);
+        setCanReview(Boolean(matchedReminder));
+
+        if (matchedReminder) {
+          reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const focusTimer = window.setTimeout(() => {
+            const reviewTextarea = document.getElementById('vehicle-review-textarea');
+            reviewTextarea?.focus();
+          }, 350);
+
+          return () => {
+            window.clearTimeout(focusTimer);
+          };
+        }
       } catch {
         setCanReview(false);
+        setReviewReminder(null);
       } finally {
         setReviewEligibilityLoading(false);
       }
@@ -342,8 +339,6 @@ export default function CarDetails() {
       });
 
       toast.success(response?.message || 'Booking created successfully.');
-      setCanReview(true);
-      setOpenReviewAfterBooking(true);
       setBookingForm({
         pickup_location: '',
         return_location: '',
@@ -352,8 +347,22 @@ export default function CarDetails() {
         note: '',
       });
       setShowBookingForm(false);
+      toast.info('You will be prompted to review this rental once it is marked completed.');
     } catch (error) {
       const detail = error?.response?.data?.detail;
+      const messageFromServer = error?.response?.data?.message;
+      const normalizedMessage = String(
+        Array.isArray(detail)
+          ? detail.map((item) => item.msg || String(item)).join(', ')
+          : (detail || messageFromServer || ''),
+      ).toLowerCase();
+
+      if (
+        normalizedMessage.includes('cannot book your own vehicle')
+        || (normalizedMessage.includes('book') && normalizedMessage.includes('own') && normalizedMessage.includes('vehicle'))
+      ) {
+        toast.error('You cannot book your own vehicle.');
+      } else
       if (Array.isArray(detail)) {
         toast.error(detail.map((item) => item.msg || String(item)).join(', '));
       } else if (error?.response?.status === 409) {
@@ -374,7 +383,7 @@ export default function CarDetails() {
           toast.error('Selected dates are unavailable. Please choose another date range.');
         }
       } else {
-        toast.error(detail || 'Failed to create booking. Please login and try again.');
+        toast.error(detail || messageFromServer || 'Failed to create booking. Please login and try again.');
       }
     } finally {
       setBookingLoading(false);
@@ -505,52 +514,76 @@ export default function CarDetails() {
                   <div className="mt-6 border-t border-gray-100 pt-5">
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <h2 className="text-lg font-semibold text-gray-900">Booking</h2>
-                      <button
-                        onClick={() => setShowBookingForm(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
-                      >
-                        Book Now
-                      </button>
+                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">Choose an option</span>
                     </div>
 
                     <p className="text-sm text-gray-500">Booking form opens in a popup.</p>
+
+                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => setShowBookingForm(true)}
+                        className="inline-flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 px-4 transition-colors"
+                      >
+                        Book Now
+                      </button>
+                      <Link
+                        to="/hire-a-driver"
+                        className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-semibold py-2.5 px-4 transition-colors hover:bg-indigo-100"
+                      >
+                        Hire a Driver
+                      </Link>
+                    </div>
                   </div>
 
                   {reviewEligibilityLoading ? (
                     <div className="mt-6 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
-                      Checking review eligibility...
+                      Checking review status...
                     </div>
                   ) : canReview ? (
-                    <div ref={reviewSectionRef} className="mt-6 border border-gray-200 rounded-xl p-5">
-                      <h2 className="text-lg font-semibold text-gray-900">Rate This Vehicle</h2>
-                      <p className="text-sm text-gray-500 mt-1 mb-4">Share your experience with other renters.</p>
+                    <div ref={reviewSectionRef} className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Completed rental</p>
+                          <h2 className="text-lg font-semibold text-gray-900 mt-1">Rate This Vehicle</h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {reviewReminder
+                              ? 'Your trip is completed. Please share your experience with other renters.'
+                              : 'You can leave a review once this rental is completed.'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-white px-3 py-2 text-xs font-medium text-amber-700 shadow-sm">
+                          Review ready
+                        </div>
+                      </div>
 
-                      <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
+                      <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+                        <RatingInput value={userRating} onChange={setUserRating} size="lg" className="mb-4" />
 
-                      <textarea
-                        value={reviewText}
-                        onChange={(event) => {
-                          setReviewText(event.target.value);
-                        }}
-                        id="vehicle-review-textarea"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-24"
-                        placeholder="Write a short review (optional)"
-                      />
+                        <textarea
+                          value={reviewText}
+                          onChange={(event) => {
+                            setReviewText(event.target.value);
+                          }}
+                          id="vehicle-review-textarea"
+                          className="w-full rounded-xl border border-gray-300 px-3 py-3 min-h-28 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                          placeholder="Write a short review (optional)"
+                        />
 
-                      <div className="mt-4 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={handleSubmitReview}
-                          disabled={!userRating}
-                          className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-5 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          Submit Rating
-                        </button>
+                        <div className="mt-4 flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSubmitReview}
+                            disabled={!userRating}
+                            className="rounded-xl bg-amber-500 px-5 py-2.5 font-medium text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Submit Rating
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-6 border border-gray-200 rounded-xl p-5 text-sm text-gray-600">
-                      You can review this vehicle only after booking it.
+                    <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600">
+                      You can review this vehicle once your rental is marked completed.
                     </div>
                   )}
                 </div>

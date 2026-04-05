@@ -153,6 +153,21 @@ export default function BookingForm() {
     } catch (submitError) {
       console.error('Booking submission error:', submitError);
       const detail = submitError?.response?.data?.detail;
+      const messageFromServer = submitError?.response?.data?.message;
+      const normalizedMessage = String(
+        Array.isArray(detail)
+          ? detail.map((item) => item.msg || String(item)).join(', ')
+          : (detail || messageFromServer || ''),
+      ).toLowerCase();
+
+      if (
+        normalizedMessage.includes('cannot book your own vehicle')
+        || (normalizedMessage.includes('book') && normalizedMessage.includes('own') && normalizedMessage.includes('vehicle'))
+      ) {
+        const ownVehicleMessage = 'You cannot book your own vehicle.';
+        setError(ownVehicleMessage);
+        toast.error(ownVehicleMessage);
+      } else
       if (Array.isArray(detail)) {
         setError(detail.map((item) => item.msg || String(item)).join(', '));
       } else if (submitError?.response?.status === 401) {

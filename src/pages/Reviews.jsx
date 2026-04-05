@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Heart, MessageSquareText, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowRight, Check, Clock3, Heart, MessageSquareText, Pencil, Star, Trash2, X } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { RatingDisplay, RatingInput } from '../components/ui/rating';
@@ -50,10 +50,13 @@ const formatDate = (value) => {
 
 export default function Reviews() {
   const [reviews, setReviews] = useState([]);
+  const [reviewReminders, setReviewReminders] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [draftRating, setDraftRating] = useState(0);
   const [draftContent, setDraftContent] = useState('');
+  const [draftReminders, setDraftReminders] = useState({});
   const [loading, setLoading] = useState(true);
+  const [remindersLoading, setRemindersLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -80,6 +83,27 @@ export default function Reviews() {
 
     loadReviews();
 
+    const loadReviewReminders = async () => {
+      setRemindersLoading(true);
+      try {
+        const data = await api.getReviewReminders({ limit: 20 });
+        if (isMounted) {
+          setReviewReminders(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Failed to load review reminders:', error);
+        if (isMounted) {
+          setReviewReminders([]);
+        }
+      } finally {
+        if (isMounted) {
+          setRemindersLoading(false);
+        }
+      }
+    };
+
+    loadReviewReminders();
+
     return () => {
       isMounted = false;
     };
@@ -92,6 +116,58 @@ export default function Reviews() {
     const total = myReviews.reduce((sum, review) => sum + (Number(review.rating) || 0), 0);
     return total / myReviews.length;
   }, [myReviews]);
+
+  const handleReminderDraftChange = (postId, field, value) => {
+    setDraftReminders((prev) => ({
+      ...prev,
+      [postId]: {
+        ...(prev[postId] || { rating: 0, content: '' }),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSubmitReminderReview = async (reminder) => {
+    const draft = draftReminders[reminder.post_id] || {};
+    const rating = Number(draft.rating) || 0;
+    const content = String(draft.content || '').trim();
+
+    if (!rating) {
+      toast.error('Please select a rating before submitting.');
+      return;
+    }
+
+    try {
+      await api.createReview({
+        post_id: reminder.post_id,
+        rating,
+        content: content || `Rated ${rating} stars for ${reminder.vehicle_name || 'this vehicle'}.`,
+      });
+
+      setReviewReminders((prev) => prev.filter((item) => item.post_id !== reminder.post_id));
+      setDraftReminders((prev) => {
+        const next = { ...prev };
+        delete next[reminder.post_id];
+        return next;
+      });
+      setReviews((prev) => [{
+        id: Date.now(),
+        post_id: reminder.post_id,
+        user_id: null,
+        rating,
+        content: content || `Rated ${rating} stars for ${reminder.vehicle_name || 'this vehicle'}.`,
+        likes: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        vehicle_name: reminder.vehicle_name,
+        role: 'Verified Renter',
+      }, ...prev]);
+      toast.success('Review submitted successfully.');
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to submit review.');
+    }
+  };
 
   const handleStartEdit = (review) => {
     setEditingId(review.id);
@@ -171,6 +247,94 @@ export default function Reviews() {
           </Link>
         </div>
 
+        <div className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-amber-100 p-3 text-amber-700">
+                <Clock3 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Review reminder</p>
+                <h2 className="mt-1 text-xl font-bold text-gray-900">
+                  {remindersLoading ? 'Checking completed rentals...' : reviewReminders.length > 0 ? 'You have completed rentals waiting for a review' : 'No pending reviews right now'}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {remindersLoading
+                    ? 'We are loading your latest completed bookings.'
+                    : reviewReminders.length > 0
+                      ? 'Share your experience to help other renters choose with confidence.'
+                      : 'Once a rental is marked completed, it will appear here so you can rate it quickly.'}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/orders"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2 font-medium text-amber-700 transition-colors hover:bg-amber-50"
+            >
+              View Orders
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {reviewReminders.length > 0 ? (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {reviewReminders.map((reminder) => {
+                const draft = draftReminders[reminder.post_id] || { rating: 0, content: '' };
+
+                return (
+                  <section key={reminder.booking_id} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Completed trip</p>
+                        <h3 className="mt-1 text-lg font-bold text-gray-900">{reminder.vehicle_name || 'Vehicle Booking'}</h3>
+                        <p className="text-sm text-gray-500">
+                          Booking #{reminder.booking_id} • {formatDate(reminder.start_date)} - {formatDate(reminder.end_date)}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                        <Star className="h-3.5 w-3.5 fill-emerald-500 text-emerald-500" />
+                        Ready to review
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      <RatingInput
+                        value={draft.rating || 0}
+                        onChange={(value) => handleReminderDraftChange(reminder.post_id, 'rating', value)}
+                        size="md"
+                      />
+
+                      <textarea
+                        value={draft.content || ''}
+                        onChange={(event) => handleReminderDraftChange(reminder.post_id, 'content', event.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="Write a short review about the car, driver, and experience"
+                      />
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleSubmitReminderReview(reminder)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
+                        >
+                          Submit Review
+                        </button>
+                        <Link
+                          to={`/vehicles/${reminder.post_id}`}
+                          className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+                        >
+                          View vehicle
+                        </Link>
+                      </div>
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-sm text-gray-500">Total Reviews</p>
@@ -195,7 +359,7 @@ export default function Reviews() {
             <div className="text-center py-12">
               <MessageSquareText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <h2 className="text-xl font-semibold text-gray-700">No reviews yet</h2>
-              <p className="text-gray-500 mt-1 mb-5">After rating a vehicle, your review will appear here.</p>
+              <p className="text-gray-500 mt-1 mb-5">Once you review a completed rental, it will appear here.</p>
               <Link
                 to="/vehicles"
                 className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 font-medium transition-colors"

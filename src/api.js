@@ -167,6 +167,11 @@ const api = {
     return response.data;
   },
 
+  async getReviewReminders(params = {}) {
+    const response = await axiosInstance.get('/reviews/reminders/me', { params });
+    return response.data;
+  },
+
   async updateReview(reviewId, data) {
     const response = await axiosInstance.patch(`/reviews/${reviewId}`, data);
     return response.data;

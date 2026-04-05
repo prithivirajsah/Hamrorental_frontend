@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, ClipboardList } from 'lucide-react';
+import { ArrowRight, BellRing, CalendarDays, ClipboardList } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -35,25 +36,63 @@ const normalizeBookings = (payload) => {
 export default function Orders() {
   const location = useLocation();
   const [bookings, setBookings] = useState([]);
+  const [reviewReminders, setReviewReminders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [remindersLoading, setRemindersLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchOrders = async () => {
       setIsLoading(true);
       setError('');
       try {
         const response = await api.getMyBookings({ limit: 100 });
-        setBookings(normalizeBookings(response));
+        if (isMounted) {
+          setBookings(normalizeBookings(response));
+        }
       } catch (err) {
-        setError(err?.response?.data?.detail || 'Failed to load your orders.');
+        if (isMounted) {
+          setError(err?.response?.data?.detail || 'Failed to load your orders.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchOrders();
+
+    const fetchReviewReminders = async () => {
+      setRemindersLoading(true);
+      try {
+        const response = await api.getReviewReminders({ limit: 10 });
+        const reminders = normalizeBookings(response);
+        if (isMounted) {
+          setReviewReminders(reminders);
+          if (reminders.length > 0) {
+            toast.info(`You have ${reminders.length} completed rental${reminders.length === 1 ? '' : 's'} waiting for a review.`);
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setReviewReminders([]);
+        }
+      } finally {
+        if (isMounted) {
+          setRemindersLoading(false);
+        }
+      }
+    };
+
+    fetchReviewReminders();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const statuses = ['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'];
@@ -88,6 +127,36 @@ export default function Orders() {
           >
             Book Another Vehicle
           </Link>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-4 md:p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
+                <BellRing className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Review notification</p>
+                <h2 className="mt-1 text-lg font-bold text-gray-900">
+                  {remindersLoading ? 'Checking for completed rentals...' : reviewReminders.length > 0 ? 'You have completed rentals ready for review' : 'No review notifications right now'}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {remindersLoading
+                    ? 'We are loading the latest completed bookings.'
+                    : reviewReminders.length > 0
+                      ? 'Open the reviews page to rate your ride and help other renters.'
+                      : 'When your rental is completed, a review reminder will appear here.'}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/reviews"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+            >
+              Go to Reviews
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
