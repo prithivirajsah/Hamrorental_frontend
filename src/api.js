@@ -40,32 +40,9 @@ const api = {
       },
     });
 
-    console.log('res', response.data)
     // Save token
     if (response.data.access_token) {
       localStorage.setItem("token", response.data.access_token);
-    }
-    console.log(response.data.user)
-
-    // Extract role safely from backend response
-    const role =
-      response.data?.user?.role ||
-      response.data?.role ||               
-      response.data?.user_role ||         
-      null;
-
-    console.log("Logged-in role:", role);
-
-    // Redirect based on role
-    if (role === "admin") {
-      window.location.href = "/admin";
-    } else if (role === "driver") {
-      window.location.href = "/driver";
-    } else if (role === "user") {
-      window.location.href = "/";
-    } else {
-      // Fallback (if backend returned no role)
-      window.location.href = "/";
     }
 
     return response.data;

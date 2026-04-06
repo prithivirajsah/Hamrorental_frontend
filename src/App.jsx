@@ -44,6 +44,7 @@ import DriverVehicles from './pages/driver/DriverVehicles';
 import DriverAddPost from './pages/driver/DriverAddPost';
 import DriverProfile from './pages/driver/DriverProfile';
 import HireChats from './pages/chat/HireChats';
+import LiveChatWidget from './components/LiveChatWidget';
 
 function App() {
   return (
@@ -205,6 +206,7 @@ function App() {
           pauseOnHover
           theme="light"
         />
+        <LiveChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );

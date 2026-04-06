@@ -20,7 +20,7 @@ function toAbsoluteImage(url) {
 }
 
 function parseImages(value) {
-  if (Array.isArray(value)) {
+  if (Array.isArray(value)) { 
     return value.filter(Boolean);
   }
 
