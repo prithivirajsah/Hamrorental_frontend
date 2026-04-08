@@ -1,0 +1,1 @@
+hamrorental-frontend.vercel.app
