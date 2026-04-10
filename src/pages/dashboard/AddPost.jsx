@@ -308,7 +308,7 @@ export default function AddPost() {
             ))}
             <label className="aspect-video border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors">
               {uploading ? (
-                <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                <Loader2 className="w-5 h-5 text-[#4e19d2] animate-spin" />
               ) : (
                 <>
                   <Upload className="w-5 h-5 text-gray-400 mb-1" />
@@ -393,7 +393,7 @@ export default function AddPost() {
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
           <Button type="submit" disabled={saveMutation.isPending} className="bg-indigo-600 hover:bg-indigo-700 px-8">
             {saveMutation.isPending
-              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin text-[#4e19d2]" /> Saving...</>
               : (isEdit ? 'Update Vehicle' : 'Publish Vehicle')
             }
           </Button>

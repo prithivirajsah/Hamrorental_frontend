@@ -410,7 +410,7 @@ export default function UserAddPost({ asModal = false, onClose, initialPost = nu
           <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-36" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin text-[#4e19d2]" />
                 {isEditing ? 'Updating...' : 'Submitting...'}
               </>
             ) : (

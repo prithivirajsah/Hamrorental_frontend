@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
+import { ThreeDot } from 'react-loading-indicators';
 import bgImage from '../assets/bg.png';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,9 +16,32 @@ export default function Login() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const activeAttemptRef = useRef(0);
+  const loadingTimeoutRef = useRef(null);
 
   const { login, loginDriver } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const clearLoadingTimer = () => {
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+  };
+
+  const switchMode = (mode) => {
+    setLoginMode(mode);
+    clearLoadingTimer();
+    setIsLoading(false);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,7 +56,17 @@ export default function Login() {
       return;
     }
 
+    const attemptId = Date.now();
+    activeAttemptRef.current = attemptId;
     setIsLoading(true);
+
+    clearLoadingTimer();
+    loadingTimeoutRef.current = setTimeout(() => {
+      if (activeAttemptRef.current === attemptId) {
+        setIsLoading(false);
+        toast.error('Login request timed out. Please try again.');
+      }
+    }, 15000);
     
     try {
       const authFn = loginMode === 'driver' ? loginDriver : login;
@@ -53,7 +87,10 @@ export default function Login() {
       console.error('Login error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
-      setIsLoading(false);
+      clearLoadingTimer();
+      if (activeAttemptRef.current === attemptId) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -82,7 +119,8 @@ export default function Login() {
           <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl border border-white/20 p-1">
             <button
               type="button"
-              onClick={() => setLoginMode('user')}
+              onClick={() => switchMode('user')}
+              disabled={isLoading}
               className={`h-10 rounded-lg text-sm font-semibold transition-all ${
                 loginMode === 'user'
                   ? 'bg-white/20 text-white'
@@ -93,7 +131,8 @@ export default function Login() {
             </button>
             <button
               type="button"
-              onClick={() => setLoginMode('driver')}
+              onClick={() => switchMode('driver')}
+              disabled={isLoading}
               className={`h-10 rounded-lg text-sm font-semibold transition-all ${
                 loginMode === 'driver'
                   ? 'bg-white/20 text-white'
@@ -172,10 +211,15 @@ export default function Login() {
                 isLoading
                   ? 'bg-gray-600 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 hover:shadow-xl transform hover:scale-[1.02]'
-              } text-white`}
+              } text-white flex items-center justify-center`}
             >
               {isLoading
-                ? (loginMode === 'driver' ? 'Logging in driver...' : 'Logging in...')
+                ? (
+                  <>
+                    <ThreeDot variant="bounce" color="#4e19d2" size="medium" text="" textColor="#4e19d2" />
+                    <span className="sr-only">Logging in</span>
+                  </>
+                )
                 : (loginMode === 'driver' ? 'Driver Log In' : 'Log In')}
             </button>
 

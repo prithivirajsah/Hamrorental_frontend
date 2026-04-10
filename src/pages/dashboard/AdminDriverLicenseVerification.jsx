@@ -131,7 +131,7 @@ export default function AdminDriverLicenseVerification() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className={`${selected ? 'lg:col-span-2' : 'lg:col-span-5'} bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden`}>
           {isLoading ? (
-            <div className="p-12 text-center text-gray-400">Loading...</div>
+            <div className="p-12 text-center text-[#4e19d2]">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
               <FileCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />

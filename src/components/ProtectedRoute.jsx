@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { ThreeDot } from 'react-loading-indicators';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -8,7 +9,13 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <ThreeDot
+          variant="bounce"
+          color="#4e19d2"
+          size="medium"
+          text=""
+          textColor="#4e19d2"
+        />
       </div>
     );
   }

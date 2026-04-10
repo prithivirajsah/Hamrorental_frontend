@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
@@ -46,6 +46,17 @@ import DriverProfile from './pages/driver/DriverProfile';
 import HireChats from './pages/chat/HireChats';
 import LiveChatWidget from './components/LiveChatWidget';
 
+function ConditionalLiveChatWidget() {
+  const location = useLocation();
+  const hideLiveChat = location.pathname.startsWith('/admin') || location.pathname.startsWith('/driver');
+
+  if (hideLiveChat) {
+    return null;
+  }
+
+  return <LiveChatWidget />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -54,6 +65,8 @@ function App() {
 
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/login" element={<Login />} />
+          <Route path="/user-login" element={<Navigate to="/login" replace />} />
+          <Route path="/driver-login" element={<Navigate to="/login?mode=driver" replace />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
           <Route path="/vehicles/:id" element={<CarDetails />} />
@@ -206,7 +219,7 @@ function App() {
           pauseOnHover
           theme="light"
         />
-        <LiveChatWidget />
+        <ConditionalLiveChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );

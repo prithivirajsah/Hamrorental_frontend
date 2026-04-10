@@ -690,7 +690,7 @@ export default function Profile() {
 
               {postsLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#695ED9]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#4e19d2]" />
                 </div>
               ) : myPosts.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
@@ -730,7 +730,7 @@ export default function Profile() {
                                 disabled={deletingPostId === post.id}
                                 className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 flex items-center gap-1"
                               >
-                                {deletingPostId === post.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                {deletingPostId === post.id ? <Loader2 className="w-3 h-3 animate-spin text-[#4e19d2]" /> : null}
                                 Delete
                               </button>
                             </div>
