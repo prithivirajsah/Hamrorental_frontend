@@ -114,7 +114,7 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <img 
               src={HeaderIcon} 
-              alt="Hamro Rental Logo" 
+              alt="Hamro Car Rental Logo" 
               className="h-8 sm:h-10 w-auto"
             />
           </div>

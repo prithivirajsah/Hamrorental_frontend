@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Public Pages
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Register from './pages/Register';
 import Home from './pages/car-rental/Home';
 import CarDetails from './pages/car-rental/CarDetails';
@@ -65,6 +66,7 @@ function App() {
 
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/user-login" element={<Navigate to="/login" replace />} />
           <Route path="/driver-login" element={<Navigate to="/login?mode=driver" replace />} />
           <Route path="/register" element={<Register />} />

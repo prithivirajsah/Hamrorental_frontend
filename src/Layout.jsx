@@ -79,7 +79,7 @@ export default function Layout() {
       >
         <div className="flex items-center justify-between h-16 px-5 border-b border-gray-100">
           <div className="flex items-center">
-            <img src={HeaderIcon} alt="HamroRental" className="h-10 w-auto object-contain" />
+            <img src={HeaderIcon} alt="Hamro Car Rental" className="h-10 w-auto object-contain" />
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />

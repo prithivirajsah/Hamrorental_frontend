@@ -66,6 +66,20 @@ const api = {
     return response.data;
   },
 
+  async forgotPassword(email) {
+    const response = await axiosInstance.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(token, password, confirmPassword) {
+    const response = await axiosInstance.post('/auth/reset-password', {
+      token,
+      password,
+      confirm_password: confirmPassword,
+    });
+    return response.data;
+  },
+
   async getProfile() {
     const response = await axiosInstance.get("/users/me");
     return response.data;

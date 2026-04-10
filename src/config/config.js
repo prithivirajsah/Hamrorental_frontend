@@ -15,7 +15,7 @@ export const config = {
     : "http://localhost:5173",
    
   // App settings
-  APP_NAME: "Hamro Rental",
+  APP_NAME: "Hamro Car Rental",
   VERSION: "1.0.0",
   
   // API endpoints

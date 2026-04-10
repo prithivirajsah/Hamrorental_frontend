@@ -54,7 +54,7 @@ const findUserByEmail = (email) => {
 // Health check
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Hamro Rental Mock Backend API',
+    message: 'Hamro Car Rental Mock Backend API',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     users_count: users.length,

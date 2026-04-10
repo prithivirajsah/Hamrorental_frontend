@@ -43,10 +43,10 @@ export default function About() {
           <div className="absolute -bottom-16 left-10 w-44 h-44 bg-indigo-300/30 rounded-full blur-2xl" />
           <div className="relative grid lg:grid-cols-[1.4fr,1fr] gap-8 items-center">
             <div>
-              <p className="text-sm font-semibold tracking-[0.2em] text-indigo-100 uppercase">About HamroRental</p>
+              <p className="text-sm font-semibold tracking-[0.2em] text-indigo-100 uppercase">About Hamro Car Rental</p>
               <h1 className="text-3xl md:text-5xl font-bold mt-3 leading-tight">Drive With Confidence Across Nepal</h1>
               <p className="text-indigo-100 mt-4 max-w-2xl leading-relaxed">
-                HamroRental was built to make travel simple, safe, and flexible. From daily city driving to outstation
+                Hamro Car Rental was built to make travel simple, safe, and flexible. From daily city driving to outstation
                 road trips, our team focuses on quality vehicles and dependable support.
               </p>
               <button className="mt-6 px-6 py-3 rounded-xl bg-[#FF9E0C] hover:brightness-110 text-white font-semibold transition-all">

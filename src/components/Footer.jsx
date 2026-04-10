@@ -13,7 +13,7 @@ export default function Footer() {
           {/* Company Info */}
           <div>
             <div className="mb-4">
-              <img src={HeaderIcon} alt="Hamro Rental" className="h-12" />
+              <img src={HeaderIcon} alt="Hamro Car Rental" className="h-12" />
             </div>
 
             <p className="text-black mb-4 font-medium">

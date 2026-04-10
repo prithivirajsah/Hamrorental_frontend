@@ -5,6 +5,7 @@ import { ThreeDot } from 'react-loading-indicators';
 import bgImage from '../assets/bg.png';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../api';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,7 @@ export default function Login() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const activeAttemptRef = useRef(0);
   const loadingTimeoutRef = useRef(null);
 
@@ -91,6 +93,29 @@ export default function Login() {
       if (activeAttemptRef.current === attemptId) {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    const normalizedEmail = resetEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error('Please enter your email');
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      const response = await api.forgotPassword(normalizedEmail);
+      toast.success(response?.message || 'If your account exists, a reset link has been sent.');
+      setShowResetModal(false);
+      setResetEmail('');
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      const message = Array.isArray(detail) ? detail[0]?.msg : detail;
+      toast.error(message || 'Failed to send reset link. Please try again.');
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -266,15 +291,7 @@ export default function Login() {
               Enter the email that you used when you signed up to recover your password.
               You will receive a password reset link.
             </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                toast.info(`Reset password link sent to ${resetEmail}`);
-                setShowResetModal(false);
-                setResetEmail('');
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
               <div className="space-y-2">
                 <div className="relative">
                   <div className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-300">
@@ -293,9 +310,12 @@ export default function Login() {
               </div>
               <button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                disabled={isResetLoading}
+                className={`w-full h-12 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 ${
+                  isResetLoading ? 'opacity-80 cursor-not-allowed' : 'hover:from-blue-700 hover:to-violet-700 hover:shadow-xl transform hover:scale-[1.02]'
+                }`}
               >
-                Send reset link
+                {isResetLoading ? 'Sending reset link...' : 'Send reset link'}
               </button>
             </form>
           </div>
