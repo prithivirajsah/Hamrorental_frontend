@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api';
 import { FileCheck, Search, CheckCircle2, XCircle, Clock, Eye, X } from 'lucide-react';
@@ -22,12 +22,63 @@ export default function AdminDriverLicenseVerification() {
   const [selected, setSelected] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewContentType, setPreviewContentType] = useState(null);
 
   const resolveAssetUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `${config.API_BASE_URL}${url}`;
+    const normalized = url.replace(/\\/g, '/');
+    if (normalized.startsWith('/')) {
+      return `${config.API_BASE_URL}${normalized}`;
+    }
+    return `${config.API_BASE_URL}/${normalized}`;
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    let objectUrl = null;
+
+    const cleanup = () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+
+    if (!selected?.id) {
+      setPreviewUrl(null);
+      setPreviewContentType(null);
+      return () => cleanup();
+    }
+
+    const loadPreview = async () => {
+      try {
+        const blob = await api.getAdminDriverLicenseImage(selected.id);
+        objectUrl = URL.createObjectURL(blob);
+        if (isMounted) {
+          setPreviewUrl(objectUrl);
+          setPreviewContentType(blob.type || null);
+        }
+      } catch {
+        if (isMounted) {
+          setPreviewUrl(resolveAssetUrl(selected.license_image_url));
+          const lower = (selected.license_image_url || '').toLowerCase();
+          if (lower.endsWith('.pdf')) {
+            setPreviewContentType('application/pdf');
+          } else {
+            setPreviewContentType(null);
+          }
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      isMounted = false;
+      cleanup();
+    };
+  }, [selected?.id, selected?.license_image_url]);
 
   const { data: licenses = [], isLoading } = useQuery({
     queryKey: ['driver-licenses'],
@@ -215,13 +266,21 @@ export default function AdminDriverLicenseVerification() {
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Uploaded License</p>
                 {selected.license_image_url ? (
-                  <a href={resolveAssetUrl(selected.license_image_url)} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={resolveAssetUrl(selected.license_image_url)}
-                      alt="License"
-                      className="w-full h-52 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity"
+                  previewContentType?.includes('pdf') ? (
+                    <iframe
+                      src={previewUrl || resolveAssetUrl(selected.license_image_url)}
+                      title="License"
+                      className="w-full h-64 rounded-xl border border-gray-100 bg-white"
                     />
-                  </a>
+                  ) : (
+                    <a href={previewUrl || resolveAssetUrl(selected.license_image_url)} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={previewUrl || resolveAssetUrl(selected.license_image_url)}
+                        alt="License"
+                        className="w-full h-52 object-contain rounded-xl border border-gray-100 bg-white hover:opacity-90 transition-opacity"
+                      />
+                    </a>
+                  )
                 ) : (
                   <div className="py-6 text-center text-gray-400 text-sm bg-gray-50 rounded-xl">No image uploaded</div>
                 )}

@@ -342,6 +342,13 @@ const api = {
     return response.data;
   },
 
+  async getAdminDriverLicenseImage(licenseId) {
+    const response = await axiosInstance.get(`/admin/driver-licenses/${licenseId}/image`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
   async uploadDriverLicense(licenseData) {
     const response = await axiosInstance.post("/users/driver/license", licenseData);
     return response.data;
@@ -369,6 +376,14 @@ const api = {
 
   async updateAdminKycStatus(documentId, data) {
     const response = await axiosInstance.patch(`/admin/kyc-documents/${documentId}/status`, data);
+    return response.data;
+  },
+
+  async getAdminKycDocumentImage(documentId, side = 'front') {
+    const normalizedSide = side === 'back' ? 'back' : 'front';
+    const response = await axiosInstance.get(`/admin/kyc-documents/${documentId}/${normalizedSide}-image`, {
+      responseType: 'blob',
+    });
     return response.data;
   },
 

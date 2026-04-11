@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api';
 import { FileCheck, Search, CheckCircle2, XCircle, Clock, Eye, X } from 'lucide-react';
@@ -21,13 +21,69 @@ export default function AdminDocuments() {
   const [selected, setSelected] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState({ front: null, back: null });
   const queryClient = useQueryClient();
 
   const resolveAssetUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `${config.API_BASE_URL}${url}`;
+    const normalized = url.replace(/\\/g, '/');
+    if (normalized.startsWith('/')) {
+      return `${config.API_BASE_URL}${normalized}`;
+    }
+    return `${config.API_BASE_URL}/${normalized}`;
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    const objectUrls = [];
+
+    const cleanupObjectUrls = () => {
+      objectUrls.forEach((item) => URL.revokeObjectURL(item));
+    };
+
+    if (!selected?.id) {
+      setPreviewUrls({ front: null, back: null });
+      return () => cleanupObjectUrls();
+    }
+
+    const loadPreviews = async () => {
+      const nextUrls = { front: null, back: null };
+
+      if (selected.front_image_url) {
+        try {
+          const frontBlob = await api.getAdminKycDocumentImage(selected.id, 'front');
+          const frontObjectUrl = URL.createObjectURL(frontBlob);
+          objectUrls.push(frontObjectUrl);
+          nextUrls.front = frontObjectUrl;
+        } catch {
+          nextUrls.front = resolveAssetUrl(selected.front_image_url);
+        }
+      }
+
+      if (selected.back_image_url) {
+        try {
+          const backBlob = await api.getAdminKycDocumentImage(selected.id, 'back');
+          const backObjectUrl = URL.createObjectURL(backBlob);
+          objectUrls.push(backObjectUrl);
+          nextUrls.back = backObjectUrl;
+        } catch {
+          nextUrls.back = resolveAssetUrl(selected.back_image_url);
+        }
+      }
+
+      if (isMounted) {
+        setPreviewUrls(nextUrls);
+      }
+    };
+
+    loadPreviews();
+
+    return () => {
+      isMounted = false;
+      cleanupObjectUrls();
+    };
+  }, [selected?.id, selected?.front_image_url, selected?.back_image_url]);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents', search],
@@ -215,16 +271,16 @@ export default function AdminDocuments() {
                     {selected.front_image_url && (
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Front Side</p>
-                      <a href={resolveAssetUrl(selected.front_image_url)} target="_blank" rel="noopener noreferrer">
-                        <img src={resolveAssetUrl(selected.front_image_url)} alt="Front" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
+                      <a href={previewUrls.front || resolveAssetUrl(selected.front_image_url)} target="_blank" rel="noopener noreferrer">
+                        <img src={previewUrls.front || resolveAssetUrl(selected.front_image_url)} alt="Front" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
                       </a>
                     </div>
                   )}
                   {selected.back_image_url && (
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Back Side</p>
-                      <a href={resolveAssetUrl(selected.back_image_url)} target="_blank" rel="noopener noreferrer">
-                        <img src={resolveAssetUrl(selected.back_image_url)} alt="Back" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
+                      <a href={previewUrls.back || resolveAssetUrl(selected.back_image_url)} target="_blank" rel="noopener noreferrer">
+                        <img src={previewUrls.back || resolveAssetUrl(selected.back_image_url)} alt="Back" className="w-full h-36 object-cover rounded-xl border border-gray-100 hover:opacity-90 transition-opacity" />
                       </a>
                     </div>
                   )}
