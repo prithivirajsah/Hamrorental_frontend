@@ -225,6 +225,16 @@ const api = {
     return response.data;
   },
 
+  async updateHireRequestStatus(hireRequestId, data) {
+    const response = await axiosInstance.patch(`/hire-requests/${hireRequestId}/status`, data);
+    return response.data;
+  },
+
+  async acceptHireRequest(hireRequestId) {
+    const response = await axiosInstance.patch(`/hire-requests/${hireRequestId}/accept`);
+    return response.data;
+  },
+
   async getHireRequestChats() {
     const response = await axiosInstance.get('/chats/me');
     return response.data;
@@ -255,6 +265,21 @@ const api = {
 
   async getAdminSupportConversations() {
     const response = await axiosInstance.get('/support-chat/admin/conversations');
+    return response.data;
+  },
+
+  async getAdminSupportConversationMessages(conversationId) {
+    const response = await axiosInstance.get(`/support-chat/admin/conversations/${conversationId}/messages`);
+    return response.data;
+  },
+
+  async sendAdminSupportConversationMessage(conversationId, data) {
+    const response = await axiosInstance.post(`/support-chat/admin/conversations/${conversationId}/messages`, data);
+    return response.data;
+  },
+
+  async markAdminSupportConversationRead(conversationId) {
+    const response = await axiosInstance.patch(`/support-chat/admin/conversations/${conversationId}/read`);
     return response.data;
   },
 

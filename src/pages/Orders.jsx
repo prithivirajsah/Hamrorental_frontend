@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, BellRing, CalendarDays, ClipboardList } from 'lucide-react';
+import { ArrowRight, BellRing, CalendarDays, ClipboardList, MessageSquare, RefreshCw, UserRound } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api from '../api';
@@ -25,6 +25,15 @@ const formatDate = (value) => {
 
 const getStatusClass = (status) => statusClasses[status] || 'bg-gray-100 text-gray-700';
 
+const hireStatusClasses = {
+  pending: 'bg-yellow-100 text-yellow-700',
+  approved: 'bg-blue-100 text-blue-700',
+  rejected: 'bg-red-100 text-red-700',
+  cancelled: 'bg-red-100 text-red-700',
+};
+
+const getHireStatusClass = (status) => hireStatusClasses[status] || 'bg-gray-100 text-gray-700';
+
 const normalizeBookings = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.bookings)) return payload.bookings;
@@ -33,14 +42,27 @@ const normalizeBookings = (payload) => {
   return [];
 };
 
+const normalizeHireRequests = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.hire_requests)) return payload.hire_requests;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+};
+
 export default function Orders() {
   const location = useLocation();
   const [bookings, setBookings] = useState([]);
+  const [hireRequests, setHireRequests] = useState([]);
   const [reviewReminders, setReviewReminders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hireLoading, setHireLoading] = useState(true);
   const [remindersLoading, setRemindersLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hireError, setHireError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [hireStatusFilter, setHireStatusFilter] = useState('all');
+  const [isRefreshingHire, setIsRefreshingHire] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +87,38 @@ export default function Orders() {
     };
 
     fetchOrders();
+
+    const fetchHireRequests = async (silent = false) => {
+      if (!silent) {
+        setHireLoading(true);
+      } else {
+        setIsRefreshingHire(true);
+      }
+      setHireError('');
+      try {
+        const response = await api.getMyHireRequests({ limit: 100 });
+        if (isMounted) {
+          setHireRequests(normalizeHireRequests(response));
+        }
+      } catch (err) {
+        if (isMounted) {
+          setHireError(err?.response?.data?.detail || 'Failed to load hire driver requests.');
+          setHireRequests([]);
+        }
+      } finally {
+        if (isMounted) {
+          if (!silent) {
+            setHireLoading(false);
+          }
+          setIsRefreshingHire(false);
+        }
+      }
+    };
+
+    fetchHireRequests();
+    const hireRefreshTimer = setInterval(() => {
+      fetchHireRequests(true);
+    }, 15000);
 
     const fetchReviewReminders = async () => {
       setRemindersLoading(true);
@@ -92,6 +146,7 @@ export default function Orders() {
 
     return () => {
       isMounted = false;
+      clearInterval(hireRefreshTimer);
     };
   }, []);
 
@@ -103,6 +158,13 @@ export default function Orders() {
   }, [bookings, statusFilter]);
 
   const hasReviewReminders = reviewReminders.length > 0;
+
+  const hireStatuses = ['all', 'pending', 'approved', 'rejected', 'cancelled'];
+
+  const filteredHireRequests = useMemo(() => {
+    if (hireStatusFilter === 'all') return hireRequests;
+    return hireRequests.filter((request) => request.status === hireStatusFilter);
+  }, [hireRequests, hireStatusFilter]);
 
   const stats = useMemo(() => ({
     total: bookings.length,
@@ -241,6 +303,120 @@ export default function Orders() {
                         View details
                       </Link>
                       <p className="text-xs text-gray-500">Booked on {formatDate(booking.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 mt-6">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Hire Driver Requests</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsRefreshingHire(true);
+                  try {
+                    const response = await api.getMyHireRequests({ limit: 100 });
+                    setHireRequests(normalizeHireRequests(response));
+                    setHireError('');
+                  } catch (err) {
+                    setHireError(err?.response?.data?.detail || 'Failed to refresh hire requests.');
+                  } finally {
+                    setIsRefreshingHire(false);
+                    setHireLoading(false);
+                  }
+                }}
+                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 text-sm font-medium transition-colors"
+                disabled={isRefreshingHire}
+              >
+                <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshingHire ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+
+              <Link
+                to="/hire-a-driver"
+                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium transition-colors"
+              >
+                New Hire Request
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-5">
+            {hireStatuses.map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setHireStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
+                  hireStatusFilter === status
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+
+          {hireLoading ? (
+            <p className="text-gray-500 text-center py-10">Loading hire requests...</p>
+          ) : hireError ? (
+            <p className="text-red-600 text-center py-10">{hireError}</p>
+          ) : filteredHireRequests.length === 0 ? (
+            <div className="text-center py-10">
+              <ClipboardList className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-600">No hire driver requests found.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredHireRequests.map((request) => (
+                <div key={request.id} className="border border-gray-200 rounded-xl p-4 md:p-5">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{request.vehicle_name || 'Driver Hire Request'}</h3>
+                      <p className="text-sm text-gray-500">Request ID: #{request.id}</p>
+                      <p className="text-sm text-gray-600">Pickup: {request.pickup_location || 'N/A'} | Return: {request.return_location || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Date: {formatDate(request.start_date)} - {formatDate(request.end_date)}</p>
+                      {request.owner_name ? (
+                        <p className="text-sm text-gray-600 inline-flex items-center gap-1.5">
+                          <UserRound className="w-4 h-4" /> Driver: {request.owner_name}
+                        </p>
+                      ) : null}
+                      {request.owner_email ? (
+                        <p className="text-sm text-gray-600">Driver Email: {request.owner_email}</p>
+                      ) : null}
+                      {request.status === 'approved' ? (
+                        <p className="text-sm text-emerald-700 font-medium">Driver approved this hire request. You can chat now.</p>
+                      ) : (
+                        <p className="text-sm text-amber-700 font-medium">Waiting for driver approval.</p>
+                      )}
+                      {request.note ? <p className="text-sm text-gray-600">Note: {request.note}</p> : null}
+                      {request.rejection_reason ? (
+                        <p className="text-sm text-red-600">Rejection reason: {request.rejection_reason}</p>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-col items-start md:items-end gap-2">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getHireStatusClass(request.status)}`}>
+                        {request.status || 'pending'}
+                      </span>
+
+                      {request.status === 'approved' ? (
+                        <Link
+                          to={`/user/chats?thread=${request.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600"
+                        >
+                          <MessageSquare className="w-4 h-4" /> Open Chat
+                        </Link>
+                      ) : null}
+
+                      <p className="text-xs text-gray-500">Created on {formatDate(request.created_at)}</p>
                     </div>
                   </div>
                 </div>

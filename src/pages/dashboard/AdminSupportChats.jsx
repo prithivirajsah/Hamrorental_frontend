@@ -51,10 +51,10 @@ export default function AdminSupportChats() {
 
     setLoadingMessages(true);
     try {
-      const data = await api.getSupportConversationMessages(conversationId);
+      const data = await api.getAdminSupportConversationMessages(conversationId);
       setMessages(Array.isArray(data) ? data : []);
       if (markAsRead) {
-        await api.markSupportConversationRead(conversationId);
+        await api.markAdminSupportConversationRead(conversationId);
       }
     } finally {
       setLoadingMessages(false);
@@ -112,7 +112,7 @@ export default function AdminSupportChats() {
     setSending(true);
     setError('');
     try {
-      await api.sendSupportConversationMessage(selectedConversationId, {
+      await api.sendAdminSupportConversationMessage(selectedConversationId, {
         message: messageInput,
       });
       setMessageInput('');

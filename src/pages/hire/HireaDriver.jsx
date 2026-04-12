@@ -8,13 +8,16 @@ import HowItWorks from './HowItWorks';
 import FeaturesSection from './FeaturesSection';
 import TestimonialsSection from './TestimonialsSection';
 import CTASection from './CTASection';
-import { addDriverRequest } from '@/utils/driverRequestStorage';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/api';
 
 export default function HireaDriver() {
   const { user, isAuthenticated } = useAuth();
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableVehicles, setAvailableVehicles] = useState([]);
   const [formData, setFormData] = useState({
+    post_id: '',
     customer_name: '',
     phone: '',
     pickup_location: '',
@@ -40,7 +43,21 @@ export default function HireaDriver() {
     setIsRequestModalOpen(false);
   };
 
-  const handleSubmit = (event) => {
+  React.useEffect(() => {
+    const loadVehicles = async () => {
+      try {
+        const posts = await api.getPosts({ limit: 200 });
+        const list = Array.isArray(posts) ? posts : [];
+        setAvailableVehicles(list);
+      } catch {
+        setAvailableVehicles([]);
+      }
+    };
+
+    loadVehicles();
+  }, []);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!isAuthenticated() || user?.role !== 'user') {
@@ -50,6 +67,10 @@ export default function HireaDriver() {
 
     if (!formData.customer_name.trim()) {
       toast.error('Please enter your name.');
+      return;
+    }
+    if (!formData.post_id) {
+      toast.error('Please select a vehicle/driver first.');
       return;
     }
     if (!formData.phone.trim()) {
@@ -69,24 +90,45 @@ export default function HireaDriver() {
       return;
     }
 
-    addDriverRequest({
-      ...formData,
-      customer_user_id: user?.id ?? user?.user_id,
-      customer_email: user?.email || '',
-      customer_name: formData.customer_name || user?.full_name || user?.username || 'Customer',
-    });
-    toast.success('Driver request submitted. Chat will open once a driver confirms.');
+    setIsSubmitting(true);
+    try {
+      const extraNote = [
+        formData.note?.trim(),
+        `Customer: ${formData.customer_name.trim()}`,
+        `Phone: ${formData.phone.trim()}`,
+        formData.service_type ? `Service: ${formData.service_type}` : null,
+        formData.pickup_time ? `Pickup Time: ${formData.pickup_time}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ');
 
-    setFormData({
-      customer_name: '',
-      phone: '',
-      pickup_location: '',
-      service_type: '',
-      pickup_date: '',
-      pickup_time: '',
-      note: '',
-    });
-    closeRequestModal();
+      await api.createHireRequest({
+        post_id: Number(formData.post_id),
+        pickup_location: formData.pickup_location.trim(),
+        return_location: formData.pickup_location.trim(),
+        start_date: formData.pickup_date,
+        end_date: formData.pickup_date,
+        note: extraNote,
+      });
+
+      toast.success('Driver request submitted. Driver can now approve and start chat.');
+
+      setFormData({
+        post_id: '',
+        customer_name: '',
+        phone: '',
+        pickup_location: '',
+        service_type: '',
+        pickup_date: '',
+        pickup_time: '',
+        note: '',
+      });
+      closeRequestModal();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to submit hire request.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,6 +164,23 @@ export default function HireaDriver() {
             </div>
 
             <form className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-gray-700">Choose Vehicle/Driver *</label>
+                <select
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                  value={formData.post_id}
+                  onChange={(event) => handleChange('post_id', event.target.value)}
+                  required
+                >
+                  <option value="">Select available vehicle</option>
+                  {availableVehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.post_title || `Vehicle #${vehicle.id}`} - {vehicle.location || 'Location N/A'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-700">Full Name *</label>
                 <input
@@ -205,9 +264,10 @@ export default function HireaDriver() {
               <div className="md:col-span-2 flex justify-end">
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 font-medium transition-colors"
                 >
-                  <Phone className="w-4 h-4" /> Submit Driver Request
+                  <Phone className="w-4 h-4" /> {isSubmitting ? 'Submitting...' : 'Submit Driver Request'}
                 </button>
               </div>
             </form>
