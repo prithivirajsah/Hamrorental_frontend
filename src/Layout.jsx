@@ -13,6 +13,7 @@ const pageMetaByPath = {
   '/admin/bookings': { name: 'Bookings', key: 'AdminBookings' },
   '/admin/users': { name: 'Users', key: 'AdminUsers' },
   '/admin/messages': { name: 'Messages', key: 'AdminMessages' },
+  '/admin/support-chats': { name: 'Support Chats', key: 'AdminSupportChats' },
   '/admin/documents': { name: 'User Documents', key: 'AdminDocuments' },
   '/admin/driver-licenses': { name: 'Driver Document', key: 'AdminDriverLicenses' },
   '/admin/add-post': { name: 'Add Post', key: 'AddPost' },
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'Bookings', to: '/admin/bookings', key: 'AdminBookings', icon: CalendarDays },
   { name: 'Users', to: '/admin/users', key: 'AdminUsers', icon: Users },
   { name: 'Messages', to: '/admin/messages', key: 'AdminMessages', icon: Mail },
+  { name: 'Support Chats', to: '/admin/support-chats', key: 'AdminSupportChats', icon: Mail },
   { name: 'User Documents', to: '/admin/documents', key: 'AdminDocuments', icon: FileCheck },
   { name: 'Driver Document', to: '/admin/driver-licenses', key: 'AdminDriverLicenses', icon: FileCheck },
 ];

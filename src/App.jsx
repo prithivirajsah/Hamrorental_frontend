@@ -45,6 +45,8 @@ import DriverVehicles from './pages/driver/DriverVehicles';
 import DriverAddPost from './pages/driver/DriverAddPost';
 import DriverProfile from './pages/driver/DriverProfile';
 import HireChats from './pages/chat/HireChats';
+import UserSupportChat from './pages/chat/UserSupportChat';
+import AdminSupportChats from './pages/dashboard/AdminSupportChats';
 import LiveChatWidget from './components/LiveChatWidget';
 
 function ConditionalLiveChatWidget() {
@@ -175,6 +177,15 @@ function App() {
           />
 
           <Route
+            path="/user/support-chat"
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <UserSupportChat />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
@@ -187,6 +198,7 @@ function App() {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="messages" element={<AdminMessages />} />
+            <Route path="support-chats" element={<AdminSupportChats />} />
             <Route path="documents" element={<AdminDocuments />} />
             <Route path="driver-licenses" element={<AdminDriverLicenseVerification />} />
             <Route path="add-post" element={<AddPost />} />

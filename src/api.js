@@ -194,6 +194,11 @@ const api = {
     return response.data;
   },
 
+  async getMyBookingsSummary() {
+    const response = await axiosInstance.get('/bookings/me/summary');
+    return response.data;
+  },
+
   async getBookingById(bookingId) {
     const response = await axiosInstance.get(`/bookings/${bookingId}`);
     return response.data;
@@ -232,6 +237,39 @@ const api = {
 
   async sendHireRequestMessage(hireRequestId, data) {
     const response = await axiosInstance.post(`/chats/${hireRequestId}/messages`, data);
+    return response.data;
+  },
+
+  // Support chat endpoints (user <-> admin)
+  async getOrCreateSupportConversation(createNew = false) {
+    const response = await axiosInstance.post('/support-chat/conversations/me/active', {
+      create_new: Boolean(createNew),
+    });
+    return response.data;
+  },
+
+  async getMySupportConversations() {
+    const response = await axiosInstance.get('/support-chat/conversations/me');
+    return response.data;
+  },
+
+  async getAdminSupportConversations() {
+    const response = await axiosInstance.get('/support-chat/admin/conversations');
+    return response.data;
+  },
+
+  async getSupportConversationMessages(conversationId) {
+    const response = await axiosInstance.get(`/support-chat/conversations/${conversationId}/messages`);
+    return response.data;
+  },
+
+  async sendSupportConversationMessage(conversationId, data) {
+    const response = await axiosInstance.post(`/support-chat/conversations/${conversationId}/messages`, data);
+    return response.data;
+  },
+
+  async markSupportConversationRead(conversationId) {
+    const response = await axiosInstance.patch(`/support-chat/conversations/${conversationId}/read`);
     return response.data;
   },
 
