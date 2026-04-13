@@ -6,6 +6,17 @@ import { createPageUrl } from '@/utils';
 import { Plus, Search, Edit2, Trash2, Car } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import config from '@/config/config';
+
+
+const toAbsoluteImageUrl = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${config.API_BASE_URL}${normalized}`;
+};
 
 export default function AdminVehicles() {
   const [search, setSearch] = useState('');
@@ -107,8 +118,15 @@ export default function AdminVehicles() {
                   <tr key={vehicle.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {vehicle.image_urls?.[0] ? (
-                          <img src={vehicle.image_urls[0]} alt={vehicle.post_title} className="w-12 h-9 object-cover rounded-lg flex-shrink-0" />
+                        {toAbsoluteImageUrl(vehicle.image_urls?.[0]) ? (
+                          <img
+                            src={toAbsoluteImageUrl(vehicle.image_urls?.[0])}
+                            alt={vehicle.post_title}
+                            className="w-12 h-9 object-cover rounded-lg flex-shrink-0"
+                            onError={(event) => {
+                              event.currentTarget.style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <div className="w-12 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <Car className="w-5 h-5 text-gray-400" />

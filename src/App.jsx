@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
@@ -47,18 +47,6 @@ import DriverProfile from './pages/driver/DriverProfile';
 import HireChats from './pages/chat/HireChats';
 import UserSupportChat from './pages/chat/UserSupportChat';
 import AdminSupportChats from './pages/dashboard/AdminSupportChats';
-import LiveChatWidget from './components/LiveChatWidget';
-
-function ConditionalLiveChatWidget() {
-  const location = useLocation();
-  const hideLiveChat = location.pathname.startsWith('/admin') || location.pathname.startsWith('/driver');
-
-  if (hideLiveChat) {
-    return null;
-  }
-
-  return <LiveChatWidget />;
-}
 
 function App() {
   return (
@@ -233,7 +221,6 @@ function App() {
           pauseOnHover
           theme="light"
         />
-        <ConditionalLiveChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );
