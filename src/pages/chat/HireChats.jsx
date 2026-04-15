@@ -85,18 +85,10 @@ function ChatPanel() {
     setError('');
 
     try {
-      const [myRequests, ownerRequests] = await Promise.allSettled([
-        api.getMyHireRequests({ limit: 200 }),
-        api.getOwnerHireRequests({ limit: 200 }),
-      ]);
-
-      const collected = [
-        ...(myRequests.status === 'fulfilled' && Array.isArray(myRequests.value) ? myRequests.value : []),
-        ...(ownerRequests.status === 'fulfilled' && Array.isArray(ownerRequests.value) ? ownerRequests.value : []),
-      ];
+      const collected = await api.getHireRequestChats();
 
       const deduped = new Map();
-      collected.forEach((request) => {
+      (Array.isArray(collected) ? collected : []).forEach((request) => {
         if (!request?.id) return;
         deduped.set(String(request.id), normalizeHireRequest(request));
       });
@@ -157,7 +149,7 @@ function ChatPanel() {
     };
 
     loadMessages();
-  }, [selectedThread?.hire_request_id, selectedThread?.status]);
+  }, [selectedThread?.hire_request_id, selectedThread?.status, selectedThread?.updated_at]);
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -172,6 +164,8 @@ function ChatPanel() {
 
       setMessageInput('');
       await refreshThreads();
+      const refreshedMessages = await api.getHireRequestMessages(selectedThread.hire_request_id);
+      setMessages(Array.isArray(refreshedMessages) ? refreshedMessages : []);
     } catch (sendError) {
       setError(sendError?.response?.data?.detail || 'Failed to send message.');
     } finally {

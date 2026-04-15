@@ -15,6 +15,7 @@ export default function Profile() {
   const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('details');
   const [kycStatus, setKycStatus] = useState('pending');
+  const [canUploadKyc, setCanUploadKyc] = useState(true);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -116,21 +117,41 @@ export default function Profile() {
   useEffect(() => {
     const loadKycStatus = async () => {
       if (!user) return;
+
+      const mapStatus = (statusValue) => {
+        if (statusValue === 'approved') return 'verified';
+        if (statusValue === 'rejected') return 'rejected';
+        if (statusValue === 'pending') return 'pending';
+        return 'not_submitted';
+      };
+
       try {
+        const verification = await api.getMyVerification();
+        const statusValue = verification?.kyc?.status;
+        if (statusValue) {
+          setKycStatus(mapStatus(statusValue));
+          setCanUploadKyc(Boolean(verification?.kyc?.can_upload));
+          return;
+        }
+
         const latestDoc = await api.getMyKycDocument();
-        if (latestDoc?.verification_status === 'approved') {
-          setKycStatus('verified');
-        } else if (latestDoc?.verification_status === 'rejected') {
-          setKycStatus('rejected');
-        } else {
-          setKycStatus('pending');
+        const fallbackStatus = latestDoc?.document?.verification_status || latestDoc?.verification_status;
+        const normalizedStatus = mapStatus(fallbackStatus);
+        setKycStatus(normalizedStatus);
+        setCanUploadKyc(normalizedStatus !== 'verified');
+
+        if (!latestDoc?.has_document && !fallbackStatus) {
+          setKycStatus('not_submitted');
+          setCanUploadKyc(true);
         }
       } catch (error) {
         if (error?.response?.status === 404) {
-          setKycStatus('pending');
+          setKycStatus('not_submitted');
+          setCanUploadKyc(true);
           return;
         }
-        setKycStatus('pending');
+        setKycStatus('not_submitted');
+        setCanUploadKyc(true);
       }
     };
 
@@ -303,9 +324,15 @@ export default function Profile() {
           <div className="w-full px-3 py-2 border border-yellow-300 rounded-md bg-yellow-50">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-yellow-500" />
-              <span className="text-yellow-700 font-medium">Pending Verification</span>
+              <span className="text-yellow-700 font-medium">
+                {kycStatus === 'not_submitted' ? 'Verification Required' : 'Pending Verification'}
+              </span>
             </div>
-            <p className="text-xs text-yellow-600 mt-1">Upload required documents to complete verification</p>
+            <p className="text-xs text-yellow-600 mt-1">
+              {kycStatus === 'not_submitted'
+                ? 'Upload required documents to start verification'
+                : 'Upload required documents to complete verification'}
+            </p>
           </div>
         );
     }
@@ -475,14 +502,16 @@ export default function Profile() {
                 <div>
                   <label className="block text-sm font-medium mb-2">KYC Status</label>
                   {renderKycStatus()}
-                  <button
-                    type="button"
-                    onClick={() => setIsKycModalOpen(true)}
-                    className="mt-4 inline-flex items-center gap-2 bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-4 py-2 rounded-md font-medium transition-colors"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Upload KYC Documents
-                  </button>
+                  {canUploadKyc && (
+                    <button
+                      type="button"
+                      onClick={() => setIsKycModalOpen(true)}
+                      className="mt-4 inline-flex items-center gap-2 bg-[#695ED9] hover:bg-[#5a4fc4] text-white px-4 py-2 rounded-md font-medium transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Upload KYC Documents
+                    </button>
+                  )}
                 </div>
 
                 <div>

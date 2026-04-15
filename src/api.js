@@ -432,6 +432,11 @@ const api = {
     return response.data;
   },
 
+  async getMyVerification() {
+    const response = await axiosInstance.get("/users/me/verification");
+    return response.data;
+  },
+
   async getAdminKycDocuments(params = {}) {
     const response = await axiosInstance.get("/admin/kyc-documents", { params });
     return response.data;
