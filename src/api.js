@@ -85,6 +85,11 @@ const api = {
     return response.data;
   },
 
+  async getDrivers(params = {}) {
+    const response = await axiosInstance.get('/users/drivers', { params });
+    return response.data;
+  },
+
   async getSession() {
     const response = await axiosInstance.get("/auth/session");
     return response.data;
@@ -163,6 +168,31 @@ const api = {
     return response.data;
   },
 
+  async createDriverReview(data) {
+    const response = await axiosInstance.post('/reviews/drivers', data);
+    return response.data;
+  },
+
+  async getDriverReviews(driverId, params = {}) {
+    const response = await axiosInstance.get(`/reviews/drivers/${driverId}`, { params });
+    return response.data;
+  },
+
+  async getDriverReviewSummary(driverId) {
+    const response = await axiosInstance.get(`/reviews/drivers/${driverId}/summary`);
+    return response.data;
+  },
+
+  async getMyReceivedDriverReviews(params = {}) {
+    const response = await axiosInstance.get('/reviews/drivers/me/received', { params });
+    return response.data;
+  },
+
+  async getMyDriverReviewSummary() {
+    const response = await axiosInstance.get('/reviews/drivers/me/summary');
+    return response.data;
+  },
+
   async updateReview(reviewId, data) {
     const response = await axiosInstance.patch(`/reviews/${reviewId}`, data);
     return response.data;
@@ -207,6 +237,19 @@ const api = {
   async getOwnerBookings(params = {}) {
     const response = await axiosInstance.get('/bookings/owner/me', { params });
     return response.data;
+  },
+
+  async getDriverDashboardStats() {
+    try {
+      const response = await axiosInstance.get('/users/driver/dashboard');
+      return response.data;
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        const fallback = await axiosInstance.get('/users/dashboard/driver');
+        return fallback.data;
+      }
+      throw error;
+    }
   },
 
   // Hire request and chat endpoints
@@ -457,6 +500,11 @@ const api = {
 
   async getAdminMessages(params = {}) {
     const response = await axiosInstance.get("/admin/messages", { params });
+    return response.data;
+  },
+
+  async updateVehicleStatus(postId, status) {
+    const response = await axiosInstance.patch(`/admin/posts/${postId}/status`, { status });
     return response.data;
   },
 };

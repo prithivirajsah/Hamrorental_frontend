@@ -57,6 +57,12 @@ export default function Reviews() {
   const [draftReminders, setDraftReminders] = useState({});
   const [loading, setLoading] = useState(true);
   const [remindersLoading, setRemindersLoading] = useState(true);
+  const [submittingDriverReview, setSubmittingDriverReview] = useState(false);
+  const [driverReviewForm, setDriverReviewForm] = useState({
+    booking_id: '',
+    rating: 0,
+    content: '',
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -229,6 +235,43 @@ export default function Reviews() {
     }
   };
 
+  const handleSubmitDriverReview = async () => {
+    const bookingId = Number(driverReviewForm.booking_id) || 0;
+    const rating = Number(driverReviewForm.rating) || 0;
+    const content = String(driverReviewForm.content || '').trim();
+
+    if (!bookingId) {
+      toast.error('Please enter a booking id.');
+      return;
+    }
+
+    if (!rating) {
+      toast.error('Please select a rating for the driver.');
+      return;
+    }
+
+    if (!content) {
+      toast.error('Please write a short driver review.');
+      return;
+    }
+
+    setSubmittingDriverReview(true);
+    try {
+      await api.createDriverReview({
+        booking_id: bookingId,
+        rating,
+        content,
+      });
+      toast.success('Driver review submitted successfully.');
+      setDriverReviewForm({ booking_id: '', rating: 0, content: '' });
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(detail || 'Unable to submit driver review.');
+    } finally {
+      setSubmittingDriverReview(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F3F2F2] text-black">
       <Header />
@@ -336,6 +379,63 @@ export default function Reviews() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="sm:col-span-3 bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Review Your Driver</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Submit driver feedback after your booking is completed. Enter your booking id and rating.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-gray-500 uppercase">Booking ID</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={driverReviewForm.booking_id}
+                  onChange={(event) => setDriverReviewForm((prev) => ({ ...prev, booking_id: event.target.value }))}
+                  placeholder="e.g. 123"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="text-xs text-gray-500 uppercase">Driver Rating</label>
+                <div className="mt-2">
+                  <RatingInput
+                    value={driverReviewForm.rating}
+                    onChange={(value) => setDriverReviewForm((prev) => ({ ...prev, rating: value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="lg:col-span-3">
+                <label className="text-xs text-gray-500 uppercase">Driver Feedback</label>
+                <textarea
+                  value={driverReviewForm.content}
+                  onChange={(event) => setDriverReviewForm((prev) => ({ ...prev, content: event.target.value }))}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Share how the driver handled communication, safety, and punctuality"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleSubmitDriverReview}
+                disabled={submittingDriverReview}
+                className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-4 py-2 text-sm font-medium transition-colors"
+              >
+                {submittingDriverReview ? 'Submitting...' : 'Submit Driver Review'}
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-sm text-gray-500">Total Reviews</p>
             <p className="text-2xl font-bold mt-1">{myReviews.length}</p>

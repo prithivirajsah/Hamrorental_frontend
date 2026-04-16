@@ -4,6 +4,14 @@ import { CalendarDays, Mail, MapPin, Phone, User } from 'lucide-react';
 import api from '@/api';
 import { toast } from 'react-toastify';
 
+const normalizeHireRequests = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.hire_requests)) return payload.hire_requests;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+};
+
 const formatDateTime = (date, time) => {
   if (!date) return '—';
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
@@ -74,7 +82,7 @@ export default function DriverRequests() {
     setLoading(true);
     try {
       const data = await api.getOwnerHireRequests({ limit: 200 });
-      setRequests(Array.isArray(data) ? data : []);
+      setRequests(normalizeHireRequests(data));
     } catch (error) {
       toast.error(error?.response?.data?.detail || 'Failed to load hire requests.');
       setRequests([]);
@@ -85,6 +93,12 @@ export default function DriverRequests() {
 
   useEffect(() => {
     loadRequests();
+
+    const refreshId = window.setInterval(() => {
+      loadRequests();
+    }, 15000);
+
+    return () => window.clearInterval(refreshId);
   }, []);
 
   const statuses = ['all', 'pending', 'approved', 'rejected', 'cancelled'];

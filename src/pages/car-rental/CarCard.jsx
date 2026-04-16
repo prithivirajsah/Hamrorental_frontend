@@ -52,6 +52,15 @@ export default function CarCard({ car }) {
   const ratingValue = Number(car.rating ?? car.average_rating ?? car.avg_rating ?? 0);
   const ratingCount = Number(car.ratingCount ?? car.rating_count ?? car.reviewCount ?? car.reviews_count ?? 0);
   const hasRatings = ratingCount > 0;
+  const normalizedStatus = String(car.status || 'available').toLowerCase();
+  const statusClasses =
+    normalizedStatus === 'available'
+      ? 'bg-green-100 text-green-700 border-green-200'
+      : normalizedStatus === 'booked'
+        ? 'bg-amber-100 text-amber-700 border-amber-200'
+        : normalizedStatus === 'maintenance'
+          ? 'bg-red-100 text-red-700 border-red-200'
+          : 'bg-gray-100 text-gray-700 border-gray-200';
 
   useEffect(() => {
     setLiked(isInWishlist(car.id));
@@ -143,6 +152,12 @@ export default function CarCard({ car }) {
           </div>
         </div>
 
+        <div className="mb-3">
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize border ${statusClasses}`}>
+            {normalizedStatus}
+          </span>
+        </div>
+
         {hasRatings ? (
           <div className="flex items-center justify-between mb-4">
             <RatingDisplay value={ratingValue} size="sm" showValue valueClassName="font-medium" />
@@ -169,9 +184,10 @@ export default function CarCard({ car }) {
         {/* Button */}
         <button
           onClick={handleViewDetails}
+          disabled={normalizedStatus !== 'available'}
           className="w-full bg-indigo-600 text-white font-medium py-2.5 rounded-lg"
         >
-          View Details
+          {normalizedStatus === 'available' ? 'View Details' : 'Unavailable'}
         </button>
       </div>
     </div>

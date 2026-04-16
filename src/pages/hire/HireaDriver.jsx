@@ -16,8 +16,9 @@ export default function HireaDriver() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [availableDrivers, setAvailableDrivers] = useState([]);
   const [formData, setFormData] = useState({
-    post_id: '',
+    driver_id: '',
     customer_name: '',
     phone: '',
     pickup_location: '',
@@ -43,19 +44,40 @@ export default function HireaDriver() {
     setIsRequestModalOpen(false);
   };
 
+  const getDriverName = (ownerId) => {
+    const matched = availableDrivers.find((driver) => Number(driver.id) === Number(ownerId));
+    return matched?.full_name || `Driver #${ownerId}`;
+  };
+
+  const visibleVehicles = formData.driver_id
+    ? availableVehicles.filter((vehicle) => Number(vehicle.owner_id) === Number(formData.driver_id))
+    : [];
+
   React.useEffect(() => {
-    const loadVehicles = async () => {
+    const loadOptions = async () => {
       try {
-        const posts = await api.getPosts({ limit: 200 });
-        const list = Array.isArray(posts) ? posts : [];
+        const postsPromise = api.getPosts({ limit: 200 });
+        const driversPromise = isAuthenticated() ? api.getDrivers({ limit: 200 }) : Promise.resolve([]);
+        const [posts, drivers] = await Promise.all([postsPromise, driversPromise]);
+
+        const postList = Array.isArray(posts) ? posts : [];
+        const driverList = Array.isArray(drivers) ? drivers : [];
+
+        const list = postList.filter((vehicle) => {
+          const status = String(vehicle?.status || 'available').toLowerCase();
+          return status === 'available';
+        });
+
         setAvailableVehicles(list);
+        setAvailableDrivers(driverList);
       } catch {
         setAvailableVehicles([]);
+        setAvailableDrivers([]);
       }
     };
 
-    loadVehicles();
-  }, []);
+    loadOptions();
+  }, [isAuthenticated]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -69,8 +91,8 @@ export default function HireaDriver() {
       toast.error('Please enter your name.');
       return;
     }
-    if (!formData.post_id) {
-      toast.error('Please select a vehicle/driver first.');
+    if (!formData.driver_id) {
+      toast.error('Please choose a driver first.');
       return;
     }
     if (!formData.phone.trim()) {
@@ -92,10 +114,18 @@ export default function HireaDriver() {
 
     setIsSubmitting(true);
     try {
+      const selectedVehicle = visibleVehicles[0] || availableVehicles[0];
+      if (!selectedVehicle) {
+        toast.error('No available vehicle found right now.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const extraNote = [
         formData.note?.trim(),
         `Customer: ${formData.customer_name.trim()}`,
         `Phone: ${formData.phone.trim()}`,
+        `Driver: ${getDriverName(formData.driver_id)}`,
         formData.service_type ? `Service: ${formData.service_type}` : null,
         formData.pickup_time ? `Pickup Time: ${formData.pickup_time}` : null,
       ]
@@ -103,7 +133,7 @@ export default function HireaDriver() {
         .join(' | ');
 
       await api.createHireRequest({
-        post_id: Number(formData.post_id),
+        post_id: Number(selectedVehicle.id),
         pickup_location: formData.pickup_location.trim(),
         return_location: formData.pickup_location.trim(),
         start_date: formData.pickup_date,
@@ -114,7 +144,7 @@ export default function HireaDriver() {
       toast.success('Driver request submitted. Driver can now approve and start chat.');
 
       setFormData({
-        post_id: '',
+        driver_id: '',
         customer_name: '',
         phone: '',
         pickup_location: '',
@@ -165,20 +195,36 @@ export default function HireaDriver() {
 
             <form className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Choose Vehicle/Driver *</label>
+                <label className="text-sm font-medium text-gray-700">Choose Driver *</label>
                 <select
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-                  value={formData.post_id}
-                  onChange={(event) => handleChange('post_id', event.target.value)}
+                  value={formData.driver_id}
+                  onChange={(event) => {
+                    const nextDriverId = event.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      driver_id: nextDriverId,
+                    }));
+                  }}
                   required
                 >
-                  <option value="">Select available vehicle</option>
-                  {availableVehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.post_title || `Vehicle #${vehicle.id}`} - {vehicle.location || 'Location N/A'}
+                  <option value="">Select available driver</option>
+                  {availableDrivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.full_name}
                     </option>
                   ))}
                 </select>
+                {availableDrivers.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700">No drivers available right now. Please login as customer to load drivers.</p>
+                ) : null}
+                {visibleVehicles.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700">No available vehicles found for the selected driver.</p>
+                ) : formData.driver_id ? (
+                  <p className="mt-1 text-xs text-emerald-700">
+                    Vehicle will be auto-selected for this driver: {visibleVehicles[0]?.post_title || `Vehicle #${visibleVehicles[0]?.id}`}
+                  </p>
+                ) : null}
               </div>
 
               <div>

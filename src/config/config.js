@@ -1,13 +1,20 @@
 const isProd = import.meta.env.PROD;
 const isDev = import.meta.env.DEV;
 const apiBaseFromEnv = import.meta.env.VITE_API_BASE_URL;
+const localApiBase = 'http://127.0.0.1:8001';
+const productionApiBase = 'https://hamrocarrental-backend.vercel.app';
+
+const apiBaseCandidates = [
+  apiBaseFromEnv,
+  isDev ? localApiBase : productionApiBase,
+  isDev ? productionApiBase : localApiBase,
+].filter(Boolean);
 
 // Environment configuration
 export const config = {
   // Backend API URLs
-  API_BASE_URL: apiBaseFromEnv || (isProd
-    ? "https://hamrocarrental-backend.vercel.app"
-    : "http://127.0.0.1:8001"),
+  API_BASE_URL: apiBaseCandidates[0],
+  API_BASE_URLS: [...new Set(apiBaseCandidates)],
   
   // Frontend URLs
   FRONTEND_URL: isProd

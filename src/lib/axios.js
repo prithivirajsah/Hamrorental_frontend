@@ -1,8 +1,10 @@
 import axios from "axios";
 import config from "../config/config.js";
 
+const apiBaseUrls = config.API_BASE_URLS || [config.API_BASE_URL].filter(Boolean);
+
 const axiosInstance = axios.create({
-  baseURL: config.API_BASE_URL,
+  baseURL: apiBaseUrls[0],
   timeout: config.REQUEST_TIMEOUT,
 });
 
@@ -57,7 +59,7 @@ axiosInstance.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
     // Log error details for debugging
     console.error('API Error Details:', {
       message: error.message,
@@ -69,6 +71,36 @@ axiosInstance.interceptors.response.use(
       headers: error.config?.headers,
       code: error.code,
     });
+
+    const requestConfig = error.config || {};
+    const retryableNetworkError =
+      error.code === 'ECONNREFUSED' ||
+      error.code === 'ERR_NETWORK' ||
+      (!error.response && error.request) ||
+      error.response?.status >= 500;
+
+    if (!requestConfig.__triedApiFallback && retryableNetworkError && apiBaseUrls.length > 1) {
+      requestConfig.__triedApiFallback = true;
+
+      for (const fallbackBaseUrl of apiBaseUrls.slice(1)) {
+        try {
+          const retryConfig = {
+            ...requestConfig,
+            baseURL: fallbackBaseUrl,
+          };
+
+          if (import.meta.env.DEV) {
+            console.warn('Retrying API request with fallback base URL:', fallbackBaseUrl);
+          }
+
+          return await axiosInstance.request(retryConfig);
+        } catch (fallbackError) {
+          if (fallbackError?.response || (fallbackError?.code !== 'ECONNREFUSED' && fallbackError?.code !== 'ERR_NETWORK')) {
+            throw fallbackError;
+          }
+        }
+      }
+    }
 
     // Handle specific error types
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {

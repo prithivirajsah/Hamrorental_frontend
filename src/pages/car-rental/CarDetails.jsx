@@ -628,6 +628,15 @@ export default function CarDetails() {
                 </div>
               </div>
 
+              <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Selected Vehicle</p>
+                <p className="mt-1 text-base font-semibold text-gray-900">{car.name || 'Vehicle'}</p>
+                <p className="text-sm text-gray-700">
+                  {car.price || 'Price unavailable'}
+                  {car.location ? ` • ${car.location}` : ''}
+                </p>
+              </div>
+
               <div className="border border-gray-200 rounded-2xl bg-[#F3F2F2] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm text-gray-600">Pickup Location</label>

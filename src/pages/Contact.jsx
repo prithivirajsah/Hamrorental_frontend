@@ -72,7 +72,7 @@ export default function Contact() {
     },
     {
       label: 'Email',
-      value: 'prithivirajsah584@gmail.com',
+      value: 'info@hamrorental.com',
       icon: FaEnvelope,
     },
     {

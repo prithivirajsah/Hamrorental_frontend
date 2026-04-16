@@ -5,6 +5,7 @@ import {
   Car,
   Bell,
   MessageSquare,
+  Star,
   User,
   Plus,
   Menu,
@@ -21,6 +22,7 @@ const pageMetaByPath = {
   '/driver/requests': { name: 'Hire Requests', key: 'DriverRequests' },
   '/driver/vehicles': { name: 'My Cars', key: 'DriverVehicles' },
   '/driver/profile': { name: 'Profile', key: 'DriverProfile' },
+  '/driver/reviews': { name: 'Driver Reviews', key: 'DriverReviews' },
   '/driver/chats': { name: 'Hire Chats', key: 'DriverChats' },
   '/driver/add-post': { name: 'Add Car', key: 'DriverAddPost' },
 };
@@ -29,6 +31,7 @@ const navItems = [
   { name: 'Dashboard', to: '/driver', key: 'DriverDashboard', icon: LayoutDashboard },
   { name: 'Hire Requests', to: '/driver/requests', key: 'DriverRequests', icon: Bell },
   { name: 'Hire Chats', to: '/driver/chats', key: 'DriverChats', icon: MessageSquare },
+  { name: 'Driver Reviews', to: '/driver/reviews', key: 'DriverReviews', icon: Star },
   { name: 'My Cars', to: '/driver/vehicles', key: 'DriverVehicles', icon: Car },
   { name: 'Profile', to: '/driver/profile', key: 'DriverProfile', icon: User },
 ];

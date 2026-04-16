@@ -42,8 +42,13 @@ export default function Home() {
     loadHomeData();
     loadPosts();
 
+    const pollId = window.setInterval(() => {
+      loadPosts();
+    }, 10000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(pollId);
     };
   }, []);
 

@@ -44,6 +44,7 @@ import DriverRequests from './pages/driver/DriverRequests';
 import DriverVehicles from './pages/driver/DriverVehicles';
 import DriverAddPost from './pages/driver/DriverAddPost';
 import DriverProfile from './pages/driver/DriverProfile';
+import DriverReviews from './pages/driver/DriverReviews';
 import HireChats from './pages/chat/HireChats';
 import UserSupportChat from './pages/chat/UserSupportChat';
 import AdminSupportChats from './pages/dashboard/AdminSupportChats';
@@ -204,6 +205,7 @@ function App() {
             <Route path="requests" element={<DriverRequests />} />
             <Route path="vehicles" element={<DriverVehicles />} />
             <Route path="profile" element={<DriverProfile />} />
+            <Route path="reviews" element={<DriverReviews />} />
             <Route path="add-post" element={<DriverAddPost />} />
             <Route path="chats" element={<HireChats embedded />} />
           </Route>

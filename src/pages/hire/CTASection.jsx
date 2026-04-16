@@ -39,9 +39,9 @@ export default function CTASection() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-8 text-slate-800">
-            <a href="mailto:info@hiredriver.com" className="flex items-center gap-2">
+            <a href="mailto:info@hamrorental.com" className="flex items-center gap-2">
               <Mail className="w-5 h-5" />
-              prithivirajsah584@gmail.com
+              info@hamrorental.com
             </a>
             <span>24/7 Support</span>
           </div>

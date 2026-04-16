@@ -63,6 +63,7 @@ export default function CarListing({ vehicles }) {
 				features: Array.isArray(vehicle.features) ? vehicle.features : [],
 				location: vehicle.location || '',
 				description: vehicle.description || '',
+				status: vehicle.status || 'available',
 		  }))
 			.map((car) => ({
 				...car,

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, Edit2, Trash2, Car } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Car, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import config from '@/config/config';
@@ -18,9 +18,12 @@ const toAbsoluteImageUrl = (rawUrl) => {
   return `${config.API_BASE_URL}${normalized}`;
 };
 
+const STATUS_OPTIONS = ['available', 'booked', 'maintenance'];
+
 export default function AdminVehicles() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: vehicles = [], isLoading } = useQuery({
@@ -45,6 +48,19 @@ export default function AdminVehicles() {
     onError: (error) => {
       console.error('Delete error:', error);
       alert('Failed to delete vehicle: ' + (error?.response?.data?.detail || 'Unknown error'));
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ postId, status }) => api.updateVehicleStatus(postId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles', 'admin'] });
+      setUpdatingStatusId(null);
+    },
+    onError: (error) => {
+      console.error('Status update error:', error);
+      alert('Failed to update status: ' + (error?.response?.data?.detail || 'Unknown error'));
+      setUpdatingStatusId(null);
     },
   });
 
@@ -110,6 +126,7 @@ export default function AdminVehicles() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Category</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Price/Day</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Location</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                   <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
@@ -145,6 +162,34 @@ export default function AdminVehicles() {
                     <td className="px-6 py-4 text-sm text-gray-600 capitalize">{vehicle.category || '—'}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">Rs. {vehicle.price_per_day}/day</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{vehicle.location || '—'}</td>
+                    <td className="px-6 py-4">
+                      <div className="relative inline-block">
+                        {updatingStatusId === vehicle.id && statusMutation.isPending ? (
+                          <div className="flex items-center gap-2 text-indigo-600">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-xs">Updating...</span>
+                          </div>
+                        ) : (
+                          <select
+                            value={vehicle.status || 'available'}
+                            onChange={(e) => {
+                              setUpdatingStatusId(vehicle.id);
+                              statusMutation.mutate({ postId: vehicle.id, status: e.target.value });
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize cursor-pointer border-0 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                              vehicle.status === 'available' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                              vehicle.status === 'booked' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+                              vehicle.status === 'maintenance' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                              'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            {STATUS_OPTIONS.map(status => (
+                              <option key={status} value={status} className="capitalize">{status}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <Link to={`${createPageUrl('AddPost')}?id=${vehicle.id}`}>
