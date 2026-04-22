@@ -184,15 +184,15 @@ export default function BookingForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-8 w-100 max-w-md mx-auto">
-      <h3 className="text-3xl font-bold text-center text-gray-900 mb-8">Book your car</h3>
+    <div className="bg-white rounded-3xl shadow-xl p-5 sm:p-8 w-full max-w-full sm:max-w-md mx-auto">
+      <h3 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-6 sm:mb-8">Book your car</h3>
       <div className="space-y-5">
         {/* Vehicle */}
         <div className="relative">
           <select
             value={form.post_id}
             onChange={(event) => onPostChange(event.target.value)}
-            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-6 py-4 pr-12 text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
+            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 pr-12 text-base sm:text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
           >
             <option value="" disabled hidden>{isLoadingPosts ? 'Loading vehicles...' : 'Select vehicle'}</option>
             {posts.map((post) => (
@@ -211,7 +211,7 @@ export default function BookingForm() {
           <select
             value={form.pickup_location}
             onChange={(event) => onChangeField('pickup_location', event.target.value)}
-            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-6 py-4 pr-12 text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
+            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 pr-12 text-base sm:text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
           >
             <option value="" disabled hidden>Place of rental</option>
             {placeOptions.map((place) => (
@@ -228,7 +228,7 @@ export default function BookingForm() {
           <select
             value={form.return_location}
             onChange={(event) => onChangeField('return_location', event.target.value)}
-            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-6 py-4 pr-12 text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
+            className="w-full appearance-none bg-gray-50 border-0 rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 pr-12 text-base sm:text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 cursor-pointer placeholder:text-gray-400"
           >
             <option value="" disabled hidden>Place of return</option>
             {placeOptions.map((place) => (
@@ -247,7 +247,7 @@ export default function BookingForm() {
             min={today}
             value={form.start_date}
             onChange={(event) => onChangeField('start_date', event.target.value)}
-            className="w-full bg-gray-50 border-0 rounded-xl px-6 py-4 pr-12 text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
+            className="w-full bg-gray-50 border-0 rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 pr-12 text-base sm:text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
             placeholder="Rental date"
           />
         </div>
@@ -259,7 +259,7 @@ export default function BookingForm() {
             min={form.start_date || today}
             value={form.end_date}
             onChange={(event) => onChangeField('end_date', event.target.value)}
-            className="w-full bg-gray-50 border-0 rounded-xl px-6 py-4 pr-12 text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
+            className="w-full bg-gray-50 border-0 rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 pr-12 text-base sm:text-lg text-gray-900 font-normal focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
             placeholder="Return date"
           />
         </div>
@@ -270,7 +270,7 @@ export default function BookingForm() {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || isLoadingPosts || posts.length === 0}
-          className="w-full bg-[#FF9E0C] text-white font-bold text-xl py-4 rounded-2xl transition-colors mt-2 disabled:opacity-60"
+          className="w-full bg-[#FF9E0C] text-white font-bold text-lg sm:text-xl py-3.5 sm:py-4 rounded-2xl transition-colors mt-2 disabled:opacity-60"
         >
           {isSubmitting ? 'Booking...' : 'Book now'}
         </button>

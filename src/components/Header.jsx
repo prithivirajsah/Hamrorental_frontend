@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { MdOutlineReviews } from "react-icons/md";
+import { FiAlignJustify } from "react-icons/fi";
 import { IoReorderThreeSharp } from "react-icons/io5";
 import { User, Heart, LogOut, MessageSquare } from 'lucide-react';
 import HeaderIcon from '../assets/Headericon.png';
@@ -13,6 +14,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showAddPostPopup, setShowAddPostPopup] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const profileRef = useRef(null);
 
   // Close popup when clicking outside
@@ -33,22 +35,34 @@ export default function Header() {
     setShowProfilePopup(!showProfilePopup);
   };
 
+  const toggleMobileMenu = () => {
+    setShowMobileMenu((current) => !current);
+  };
+
+  const closeMobileMenu = () => {
+    setShowMobileMenu(false);
+  };
+
   const handleLogout = () => {
     logout();
     setShowProfilePopup(false);
+    closeMobileMenu();
   };
 
   const handleAddPostClick = () => {
     if (user?.role === 'admin') {
       navigate('/admin/add-post');
+      closeMobileMenu();
       return;
     }
     if (user?.role === 'driver') {
       navigate('/driver/add-post');
+      closeMobileMenu();
       return;
     }
     setShowAddPostPopup(true);
     setShowProfilePopup(false);
+    closeMobileMenu();
   };
 
   const closeAddPostPopup = () => {
@@ -77,9 +91,9 @@ export default function Header() {
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Row: Social Icons, Logo, and Action Buttons */}
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-3">
           {/* Left: Social Media Icons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden md:flex items-center gap-2 sm:gap-3">
             <a
               href="https://www.facebook.com/"
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center transition-colors"
@@ -121,12 +135,22 @@ export default function Header() {
 
           {/* Add Post and Profile (when logged in) or Login */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              className="md:hidden w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle navigation menu"
+              aria-expanded={showMobileMenu}
+            >
+              <FiAlignJustify className="w-6 h-6" />
+            </button>
+
             {isAuthenticated() ? (
               <>
                 {/* Add Post Button */}
                 <button 
                   type="button"
-                  className="px-4 sm:px-6 py-2 rounded-xl border font-medium transition-colors"
+                  className="hidden sm:inline-flex px-4 sm:px-6 py-2 rounded-xl border font-medium transition-colors"
                   style={{
                     backgroundColor: '#695ED920',
                     borderColor: '#695ED9',
@@ -143,7 +167,7 @@ export default function Header() {
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={toggleProfilePopup}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border flex items-center justify-center transition-colors"
+                    className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full border items-center justify-center transition-colors"
                     style={{
                       backgroundColor: '#695ED920',
                       borderColor: '#695ED9'
@@ -285,7 +309,7 @@ export default function Header() {
                 </div>
               </>
             ) : (
-              <Link to="/login" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors">
+              <Link to="/login" className="hidden sm:inline-flex bg-indigo-600 hover:bg-indigo-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors">
                 Login
               </Link>
             )}
@@ -293,8 +317,8 @@ export default function Header() {
         </div>
         
         {/* Bottom Row: Navigation Menu */}
-        <div className="border-t border-gray-300 animate-fadeIn">
-          <nav className="flex items-center justify-center gap-8 py-3 ">
+        <div className="hidden border-t border-gray-300 animate-fadeIn md:block">
+          <nav className="flex items-center justify-center gap-8 py-3">
             <Link 
               to="/" 
               className="text-gray-700 hover-custom-purple font-medium transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 relative group"
@@ -332,6 +356,57 @@ export default function Header() {
             </Link>
           </nav>
         </div>
+
+        {showMobileMenu && (
+          <div className="md:hidden border-t border-gray-200 bg-white pb-4">
+            <nav className="flex flex-col gap-3 pt-4">
+              <Link
+                to="/"
+                className="px-2 py-2 text-gray-700 font-medium"
+                onClick={closeMobileMenu}
+              >
+                Home
+              </Link>
+              <Link
+                to="/vehicles"
+                className="px-2 py-2 text-gray-700 font-medium"
+                onClick={closeMobileMenu}
+              >
+                Vehicles
+              </Link>
+              <Link
+                to="/hire-a-driver"
+                className="px-2 py-2 text-gray-700 font-medium"
+                onClick={closeMobileMenu}
+              >
+                Hire a Driver
+              </Link>
+              <Link
+                to="/faqs"
+                className="px-2 py-2 text-gray-700 font-medium"
+                onClick={closeMobileMenu}
+              >
+                FAQs
+              </Link>
+              <Link
+                to="/contact"
+                className="px-2 py-2 text-gray-700 font-medium"
+                onClick={closeMobileMenu}
+              >
+                Contact
+              </Link>
+              {!isAuthenticated() && (
+                <Link
+                  to="/login"
+                  className="mx-2 mt-2 inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white"
+                  onClick={closeMobileMenu}
+                >
+                  Login
+                </Link>
+              )}
+            </nav>
+          </div>
+        )}
 
       </div>
 

@@ -218,9 +218,7 @@ export default function HireaDriver() {
                 {availableDrivers.length === 0 ? (
                   <p className="mt-1 text-xs text-amber-700">No drivers available right now. Please login as customer to load drivers.</p>
                 ) : null}
-                {visibleVehicles.length === 0 ? (
-                  <p className="mt-1 text-xs text-amber-700">No available vehicles found for the selected driver.</p>
-                ) : formData.driver_id ? (
+                {formData.driver_id && visibleVehicles.length > 0 ? (
                   <p className="mt-1 text-xs text-emerald-700">
                     Vehicle will be auto-selected for this driver: {visibleVehicles[0]?.post_title || `Vehicle #${visibleVehicles[0]?.id}`}
                   </p>
